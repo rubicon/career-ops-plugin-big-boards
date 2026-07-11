@@ -23,9 +23,9 @@ career-ops-plugin-big-boards/
                           # allowedHosts: api.apify.com)
   index.mjs               # the provider hook: calls the engine, returns Job[]
   lib/
-    big-boards-core.mjs   # curation logic: title/location/salary filters, slugify,
+    scan-apify-core.mjs   # curation logic: title/location/salary filters, slugify,
                            # pipeline-row formatting, scan-history dedup
-    big-boards.mjs         # engine: Apify actor call, multi-pass scan, JD caching
+    scan-apify.mjs         # engine: Apify actor call, multi-pass scan, JD caching
   test/
     smoke.mjs             # zero-network smoke test (manifest/hooks match)
   skill.md                 # agent-facing usage doc for this plugin
@@ -38,9 +38,9 @@ a read-only source for the port, not a dependency.
 
 ## Design boundary: curation and the network call are separate
 
-The engine (`lib/big-boards.mjs`) is responsible for calling the Apify actor
+The engine (`lib/scan-apify.mjs`) is responsible for calling the Apify actor
 and assembling raw results across one or more scan passes. The curation core
-(`lib/big-boards-core.mjs`) is pure: it filters, dedupes against scan history,
+(`lib/scan-apify-core.mjs`) is pure: it filters, dedupes against scan history,
 slugifies job identifiers, and formats pipeline rows, all without touching the
 network. Keeping curation pure makes it unit-testable without any live Apify
 account or network access.

@@ -46,6 +46,10 @@ here once the provider hook lands.
 node plugins.mjs run big-boards provider
 ```
 
+This command is not functional yet: `manifest.json` still declares the
+career-ops-plugin template's placeholder `ingest` hook. It lands once the
+`provider` hook is wired in (see [ARCHITECTURE.md](ARCHITECTURE.md)).
+
 ## Development
 
 ```bash

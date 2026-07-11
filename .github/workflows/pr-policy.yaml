@@ -23,9 +23,9 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           case "$HEAD_REF" in
-            dependabot/*|release-please--*) echo "trusted automation branch — exempt"; exit 0 ;;
+            dependabot/*|release-please--*) echo "trusted automation branch, exempt"; exit 0 ;;
           esac
-          if [ "$ACTOR" = "dependabot[bot]" ]; then echo "trusted bot — exempt"; exit 0; fi
+          if [ "$ACTOR" = "dependabot[bot]" ]; then echo "trusted bot, exempt"; exit 0; fi
           echo "$HEAD_REF" | grep -Eq '^dev/[0-9]+-[a-z0-9.-]+$' \
             || { echo "Branch '$HEAD_REF' does not match ^dev/[0-9]+-[a-z0-9.-]+$"; exit 1; }
 
@@ -40,8 +40,8 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           case "$HEAD_REF" in
-            dependabot/*|release-please--*) echo "trusted automation branch — exempt"; exit 0 ;;
+            dependabot/*|release-please--*) echo "trusted automation branch, exempt"; exit 0 ;;
           esac
-          if [ "$ACTOR" = "dependabot[bot]" ]; then echo "trusted bot — exempt"; exit 0; fi
+          if [ "$ACTOR" = "dependabot[bot]" ]; then echo "trusted bot, exempt"; exit 0; fi
           printf '%s' "$BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' \
             || { echo "PR body must reference its issue (e.g. 'Closes #12')"; exit 1; }
