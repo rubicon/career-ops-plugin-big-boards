@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible problem with the plugin
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do not include any
+        personal data (no real job-search content), and do not report security
+        issues here (see SECURITY.md).
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      placeholder: e.g. 20.11.0
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use a small, non-personal sample configuration if the input matters.
+      placeholder: |
+        1. config/plugins.yml contains ...
+        2. Run node plugins.mjs run big-boards provider
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: no-personal-data
+    attributes:
+      label: Confirmation
+      options:
+        - label: This report contains no personal data (no real job-search content).
+          required: true

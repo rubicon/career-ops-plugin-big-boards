@@ -16,6 +16,7 @@ assert(hooks && typeof hooks === 'object', 'default export must be an object of 
 const keys = Object.keys(hooks);
 assert(keys.length > 0, 'declare at least one hook');
 for (const k of keys) assert(KINDS.includes(k), `unknown hook "${k}"`);
-for (const h of manifest.hooks) assert(keys.includes(h), `manifest declares hook "${h}" but index.mjs does not export it`);
+for (const h of manifest.hooks)
+  assert(keys.includes(h), `manifest declares hook "${h}" but index.mjs does not export it`);
 
 console.log('✓ smoke ok:', keys.join(', '));

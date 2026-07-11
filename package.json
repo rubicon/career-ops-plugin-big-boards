@@ -1,0 +1,35 @@
+{
+  "name": "career-ops-plugin-big-boards",
+  "version": "0.1.0",
+  "description": "Aggregate job-board scan via Apify, pulling roles from LinkedIn, Indeed, ZipRecruiter, Glassdoor, and other Apify-reachable sources with full job-description capture.",
+  "license": "MIT",
+  "author": "Dax Davis <dax@rubicontv.com>",
+  "homepage": "https://github.com/rubicon/career-ops-plugin-big-boards#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rubicon/career-ops-plugin-big-boards.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rubicon/career-ops-plugin-big-boards/issues"
+  },
+  "keywords": [
+    "career-ops",
+    "career-ops-plugin",
+    "job-board",
+    "apify"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "prettier": "^3.4.2"
+  }
+}

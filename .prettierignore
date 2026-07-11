@@ -1,0 +1,10 @@
+node_modules/
+output/
+package-lock.json
+
+# release-please rewrites these on each release PR and reserializes JSON in a
+# form Prettier reformats (e.g. it expands "hooks": ["provider"] onto multiple
+# lines). Ignore them so the release PR never trips format:check.
+CHANGELOG.md
+.release-please-manifest.json
+manifest.json

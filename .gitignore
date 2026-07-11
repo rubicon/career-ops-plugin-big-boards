@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Generated output
+output/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local env
+.env
+.env.*
+
+# OS and editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Worktrees
+worktrees/
+
+# Agent-local state (not part of the tracked repo)
+.remember/
+.superpowers/
+HANDOFF.md

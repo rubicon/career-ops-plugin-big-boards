@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please open a feature request before starting work, so the approach can
+        be agreed on first. This plugin stays small and single-purpose: it scans
+        Apify-reachable job boards and feeds curated roles into career-ops.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to accomplish, and what is missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps the plugin dependency-free (no npm imports), sandboxed, and human-in-the-loop.
+          required: true
