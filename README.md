@@ -1,26 +1,70 @@
-# career-ops-plugin-template
+# career-ops-plugin-big-boards
 
-Template for a [career-ops](https://github.com/santifer/career-ops) community plugin.
+Scan the big consumer job boards through Apify and feed curated roles, with
+full job-description text, into the [career-ops](https://github.com/santifer/career-ops)
+pipeline. A career-ops community plugin.
 
-## Use it
+[![CI](https://github.com/rubicon/career-ops-plugin-big-boards/actions/workflows/ci.yaml/badge.svg)](https://github.com/rubicon/career-ops-plugin-big-boards/actions/workflows/ci.yaml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-1. Click **"Use this template"** → create a repo named **`career-ops-plugin-<your-name>`**.
-2. Edit `manifest.json` (set `id`/`name` to `<your-name>`, declare your `hooks`,
-   `requiredEnv`, `allowedHosts`) and `index.mjs` (implement your hooks).
-3. Reach the network **only** through `ctx.fetch` (the engine enforces your
-   `allowedHosts` + SSRF protection). Producers return `Job[]`; the engine writes them.
-4. `node test/smoke.mjs` should pass. CI runs it on every push.
+## What it does
 
-## Hooks
+career-ops-plugin-big-boards pulls roles from LinkedIn, Indeed, ZipRecruiter,
+Glassdoor, and other Apify-reachable sources, using the
+`agentx/all-jobs-scraper` Apify actor. Unlike a stored board URL, which the big
+boards bot-block on a later fetch, the actor returns the full job description
+at scrape time, so the plugin captures the content up front and curates it
+into the pipeline without ever needing to re-fetch a dead link. It requires an
+Apify account.
 
-`provider` · `ingest` · `search` · `notify` · `export` — there is no auto-submit hook.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the design and current build
+status.
 
-## Publish + get approved
+## Install
 
-Open a **registry PR** against career-ops to be listed as an approved community
-plugin (see [docs/PLUGINS.md](https://github.com/santifer/career-ops/blob/main/docs/PLUGINS.md)).
-Users then install with `node plugins.mjs add <your-name>`.
+This is a career-ops plugin. From your career-ops checkout:
+
+```bash
+node plugins.mjs add big-boards
+```
+
+Then enable it in `config/plugins.yml`:
+
+```yaml
+plugins:
+  big-boards:
+    enabled: true
+```
+
+Full setup (the Apify account, supplying `APIFY_TOKEN`, and configuring scan
+passes) and the run-cost disclosure are documented in `skill.md` and expanded
+here once the provider hook lands.
+
+## Usage
+
+```bash
+node plugins.mjs run big-boards provider
+```
+
+## Development
+
+```bash
+npm install        # dev tooling only (Prettier, commitlint); the plugin's
+                    # own runtime code stays dependency-free
+npm test           # zero-network smoke test
+npm run format:check
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and discussion are welcome. This
+plugin is human-in-the-loop by design: it proposes roles into the pipeline, it
+never submits anything anywhere.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+## Contributors
+
+![Contributors](https://contrib.rocks/image?repo=rubicon/career-ops-plugin-big-boards)
