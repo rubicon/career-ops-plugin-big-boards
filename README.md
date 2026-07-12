@@ -99,17 +99,20 @@ to the pipeline.
 ## What it produces
 
 `Job[]`, the standard career-ops producer shape: `{ title, url, company,
-location }`. Each kept job's full description is cached locally to
-`jds/{slug}-{hash}.md`, and `url` points at that cached copy as
-`local:jds/{slug}-{hash}.md`, so the pipeline row survives the board's own
-bot-block. The original board URL is preserved as `_remote_url`.
+location }`. When a kept job's description is at least 50 characters and the
+local write succeeds, the plugin caches it to `jds/{slug}-{hash}.md`, `url`
+points at that cached copy as `local:jds/{slug}-{hash}.md`, and the original
+board URL is preserved as `_remote_url`, so the pipeline row survives the
+board's own bot-block. Otherwise `url` falls back to the original board URL
+and `_remote_url` is omitted.
 
 ## Cost
 
 Apify bills this actor pay-per-event: about $0.01 per actor start plus about
-$0.0035 per result, per the actor's documented pricing on the Apify Store as
-of 2026-07-12 (`agentx/all-jobs-scraper`, "All Jobs Scraper" listing). There
-is no monthly rental; every run costs money.
+$0.0035 per result, per the actor's documented pricing on its Apify Store
+listing, <https://apify.com/agentx/all-jobs-scraper>, as of 2026-07-12
+(`agentx/all-jobs-scraper`, "All Jobs Scraper"). There is no monthly rental;
+every run costs money.
 
 For a 5-title by 2-pass by 4-board configuration, a realistic run costs about
 $0.30 to $1.80. Run daily, that is about $9 to $53 per month. Actual cost

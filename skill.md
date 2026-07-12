@@ -40,11 +40,13 @@ the user's concern, not the plugin's.
 ## What it produces
 
 `Job[]`, the standard career-ops producer shape: `{ title, url, company,
-location }`. Each kept job's full description is cached locally to
-`jds/{slug}-{hash}.md` and `url` points at the cached copy as
-`local:jds/{slug}-{hash}.md`. The original board URL is preserved as
-`_remote_url`, since the board itself will bot-block a later fetch. `Job`
-does not carry a `description` field; the cached file is the description.
+location }`. When a kept job's description is at least 50 characters and the
+local write succeeds, the plugin caches it to `jds/{slug}-{hash}.md`, `url`
+points at the cached copy as `local:jds/{slug}-{hash}.md`, and the original
+board URL is preserved as `_remote_url`, since the board itself may
+bot-block a later fetch. Otherwise `url` falls back to the original board
+URL and `_remote_url` is omitted. `Job` does not carry a `description`
+field; the cached file, when present, is the description.
 
 ## Settings
 
