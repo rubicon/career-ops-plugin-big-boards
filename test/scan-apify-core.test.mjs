@@ -104,6 +104,18 @@ assert(
 assert(titleAllowed('Door to Door Lead Generation', TF) === false, 'door-to-door rejected');
 assert(titleAllowed('VP of Marketing', TF) === true, 'VP of Marketing allowed');
 
+// Empty/unset positive means "no title filtering" (allow all), not "drop
+// everything". The actor's cost is already spent at fetch time, so an
+// unset title_filter must not throw away every fetched result (#23).
+assert(titleAllowed('anything', undefined) === true, 'unset title_filter allows any title');
+assert(titleAllowed('x', { positive: [] }) === true, 'empty positive list allows any title');
+assert(
+  titleAllowed('X', { negative: ['X'] }) === false,
+  'empty positive still honors negative filter',
+);
+assert(titleAllowed('X', { positive: ['X'] }) === true, 'non-empty positive matches');
+assert(titleAllowed('Eng', { positive: ['VP'] }) === false, 'non-empty positive rejects non-match');
+
 // ── isRemoteJob ──────────────────────────────────────────────────────
 section('isRemoteJob');
 assert(
@@ -310,6 +322,30 @@ const sample = [
   assert(
     kept.length === 1 && kept[0].platform_url === 'u1',
     'drops already-seen url2 via scan-history',
+  );
+}
+
+{
+  // Regression for #23: an unset title_filter (config === {}) must not drop
+  // every job. The job still needs to clear the location/salary defaults,
+  // so mark it remote (the default location_filter allows remote).
+  const job = {
+    platform_url: 'u-empty-config',
+    company_name: 'AnyCo',
+    title: 'Anything At All',
+    location: 'Remote',
+    is_remote: true,
+    salary_minimum: null,
+    salary_maximum: null,
+  };
+  const { kept, dropped } = curate([job], {}, new Set());
+  assert(
+    kept.length === 1 && kept[0].platform_url === 'u-empty-config',
+    'empty config keeps the job instead of dropping it as title',
+  );
+  assert(
+    !dropped.some((d) => d.reason === 'title'),
+    'no job is dropped for reason "title" under an empty config',
   );
 }
 
