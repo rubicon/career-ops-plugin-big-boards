@@ -87,8 +87,8 @@ the engine.
 
 ## Current status
 
-The curation core and the engine (`lib/scan-apify.mjs`) are both ported. The
-plugin still ships the career-ops-plugin template's placeholder `ingest` hook
-while the `provider` hook wiring lands through its own issue. `README.md` and
-`skill.md` are updated to describe actual runtime behavior once that hook is
-wired in.
+The curation core, the engine (`lib/scan-apify.mjs`), and the `provider` hook
+(`index.mjs`) are all wired. `manifest.json` declares `hooks: ["provider"]`,
+and a `provider: big-boards` entry in `portals.yml` is enough to drive a full
+configured scan. `README.md` and `skill.md` describe the actual runtime
+behavior.
