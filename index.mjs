@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 // @ts-check
-// big-boards — a career-ops plugin.
+// big-boards, a career-ops plugin.
 // Guide: https://github.com/santifer/career-ops/blob/main/docs/PLUGINS.md
 //
 // Rules the engine enforces for you:
 //  - Egress ONLY through ctx.fetch / ctx.fetchJson / ctx.fetchText (your manifest
 //    `allowedHosts` is applied + SSRF-guarded). Do NOT import node:http/net or
-//    call global fetch — community plugins are rejected for that.
+//    call global fetch. Community plugins are rejected for that.
 //  - Producers (provider/ingest/search) RETURN Job[] = { title, url, company, location };
 //    the engine writes them to the pipeline. Consumers (export/notify) push to
 //    the user's own store. There is no auto-submit hook.
