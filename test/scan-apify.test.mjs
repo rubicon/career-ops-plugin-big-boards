@@ -172,7 +172,7 @@ await withTmpCwd(() => {
   const content = readFileSync(path1, 'utf-8');
   check(content.includes('title: "VP Marketing"'), 'frontmatter carries the title');
   check(content.includes('company: "Acme Robotics"'), 'frontmatter carries the company');
-  check(content.includes('# VP Marketing — Acme Robotics'), 'body has the heading');
+  check(content.includes('# VP Marketing - Acme Robotics'), 'body has the heading');
   check(content.includes(LONG_DESCRIPTION), 'body has the description text');
 
   const path2 = cacheJobDescription(rawJob());
@@ -202,7 +202,7 @@ await withTmpCwd(() => {
 });
 
 // ── scanApify (end-to-end, hermetic) ────────────────────────────────
-section('scanApify — token and settings validation');
+section('scanApify: token and settings validation');
 {
   let called = false;
   const ctx = {
@@ -229,7 +229,7 @@ section('scanApify — token and settings validation');
   );
 }
 
-section('scanApify — happy path');
+section('scanApify: happy path');
 await withTmpCwd(async () => {
   const calls = [];
   const ctx = {
@@ -268,7 +268,7 @@ await withTmpCwd(async () => {
   check(jobs[0].url.startsWith('local:jds/'), 'job url points at the cached JD end to end');
 });
 
-section('scanApify — resilience: one failed pass does not abort the run');
+section('scanApify: resilience, one failed pass does not abort the run');
 await withTmpCwd(async () => {
   const logs = [];
   const ctx = {
@@ -289,7 +289,7 @@ await withTmpCwd(async () => {
   );
 });
 
-section('scanApify — cross-title dedup');
+section('scanApify: cross-title dedup');
 await withTmpCwd(async () => {
   const ctx = {
     env: { APIFY_TOKEN: 'tok' },
@@ -303,7 +303,7 @@ await withTmpCwd(async () => {
   check(jobs.length === 1, 'a role surfaced under two searched titles is returned once');
 });
 
-section('scanApify — curation filters are applied');
+section('scanApify: curation filters are applied');
 await withTmpCwd(async () => {
   const ctx = {
     env: { APIFY_TOKEN: 'tok' },
