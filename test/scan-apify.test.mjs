@@ -21,7 +21,7 @@
  * made it into the source.
  */
 
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -228,6 +228,35 @@ section('scanApify: token and settings validation');
     'throws when settings.titles is missing',
   );
 }
+{
+  let called = false;
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: { titles: ['CMO', null] },
+    fetchJson: async () => {
+      called = true;
+      return [];
+    },
+  };
+  await checkRejects(
+    () => scanApify(ctx),
+    /settings\.titles\[1\] must be a non-empty string/,
+    'throws a clear error naming settings.titles when an entry is falsy, instead of silently dropping it',
+  );
+  check(called === false, 'never calls fetchJson when a titles entry is malformed');
+}
+{
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: { titles: ['CMO', '   '] },
+    fetchJson: async () => [],
+  };
+  await checkRejects(
+    () => scanApify(ctx),
+    /settings\.titles\[1\] must be a non-empty string/,
+    'whitespace-only titles entries are also rejected',
+  );
+}
 
 section('scanApify: happy path');
 await withTmpCwd(async () => {
@@ -268,6 +297,18 @@ await withTmpCwd(async () => {
   check(jobs[0].url.startsWith('local:jds/'), 'job url points at the cached JD end to end');
 });
 
+section('scanApify: empty dataset');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: { titles: ['VP Marketing'], ...permissiveConfig(['VP Marketing']) },
+    fetchJson: async () => [], // both passes return nothing
+  };
+  const jobs = await scanApify(ctx);
+  check(Array.isArray(jobs) && jobs.length === 0, 'returns [] when both passes yield no jobs');
+  check(!existsSync('jds'), 'no jds/ directory created, and no throw, when nothing was kept');
+});
+
 section('scanApify: resilience, one failed pass does not abort the run');
 await withTmpCwd(async () => {
   const logs = [];
@@ -301,6 +342,60 @@ await withTmpCwd(async () => {
   };
   const jobs = await scanApify(ctx);
   check(jobs.length === 1, 'a role surfaced under two searched titles is returned once');
+});
+
+section('scanApify: per-title incremental JD caching survives a later abort');
+await withTmpCwd(async () => {
+  // Title 1 ("VP Marketing") completes fully and its one kept job should be
+  // JD-cached to disk as part of processing *that* title. Title 2 ("Head of
+  // Marketing") then hits an uncaught, non-Error rejection from fetchJson:
+  // the per-pass try/catch in scanApify only guards the network call, so
+  // its own `err.message` access throws (err is null) and that TypeError
+  // escapes uncaught, aborting the run before scanApify ever reaches its
+  // final return. This simulates "interrupted mid-run" without mocking any
+  // engine logic -- fetchJson is the same injected seam every other test
+  // here uses, and the interruption is a real, unhandled exception that
+  // really propagates out of scanApify.
+  //
+  // If JD caching were still deferred to a trailing `allKept.map(toJob)`
+  // (the bug this test guards against), title 1's job would never be
+  // written to disk, because the function never reaches that line. Caching
+  // per-title, inside the loop, means title 1's JD is already on disk by
+  // the time title 2 blows up.
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: {
+      titles: ['VP Marketing', 'Head of Marketing'],
+      ...permissiveConfig(['VP Marketing', 'Head of Marketing']),
+    },
+    log: () => {},
+    fetchJson: async (url, opts) => {
+      const input = JSON.parse(opts.body);
+      if (input.keyword === 'VP Marketing') {
+        return input.remote_only ? [] : [rawJob()];
+      }
+      // eslint-disable-next-line no-throw-literal
+      throw null; // non-Error rejection: escapes the per-pass try/catch uncaught
+    },
+  };
+
+  let threw = false;
+  try {
+    await scanApify(ctx);
+  } catch {
+    threw = true;
+  }
+  check(threw, 'the simulated title-2 abort actually propagates out of scanApify');
+
+  const jdsExists = existsSync('jds');
+  check(jdsExists, "title 1's JD cache directory exists even though the run aborted on title 2");
+  if (jdsExists) {
+    const files = readdirSync('jds');
+    check(
+      files.length === 1,
+      "exactly title 1's JD file was written before the abort (per-title incremental caching)",
+    );
+  }
 });
 
 section('scanApify: curation filters are applied');
