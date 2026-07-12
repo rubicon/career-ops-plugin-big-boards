@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: MIT
 // @ts-check
-// example — a career-ops plugin.
+// big-boards — a career-ops plugin.
 // Guide: https://github.com/santifer/career-ops/blob/main/docs/PLUGINS.md
 //
 // Rules the engine enforces for you:
@@ -11,12 +12,32 @@
 //    the user's own store. There is no auto-submit hook.
 //  - Keys come from ctx.env (declare them in manifest.requiredEnv); non-secret
 //    settings come from ctx.settings (the user's config/plugins.yml block).
+//
+// The `provider` hook is the KEYED-PROVIDER shape from career-ops-exec's
+// plugins/_types.js (read-only reference; not a dependency of this repo):
+// `{ id, detect?, fetch(entry, ctx) }`, byte-identical to a core
+// providers/*.mjs Provider plus ctx.env. The engine forces detect() to null
+// (a keyed provider never auto-detects; it fires only on an explicit
+// `provider: big-boards` portals.yml entry) and invokes fetch(entry, ctx)
+// once per such entry. All of this plugin's configuration comes from
+// ctx.settings (config/plugins.yml), not from the portals.yml entry, so
+// `entry` is accepted (to satisfy the contract) and otherwise unused.
+//
+// scanApify(ctx) (lib/scan-apify.mjs) is self-contained: it reads
+// ctx.settings.titles and runs one local + one remote Apify pass per title,
+// so a single portals.yml entry with `provider: big-boards` is enough to
+// drive the whole configured search.
+
+import { scanApify } from './lib/scan-apify.mjs';
 
 export default {
-  // Replace/add hooks to match manifest.hooks. Example ingest:
-  async ingest(ctx) {
-    // const data = await ctx.fetchJson('https://api.example.com/jobs');
-    // return data.results.map(j => ({ title: j.title, url: j.url, company: j.company, location: j.location || '' }));
-    return [];
+  provider: {
+    id: 'big-boards',
+    detect() {
+      return null;
+    },
+    async fetch(_entry, ctx) {
+      return scanApify(ctx);
+    },
   },
 };
