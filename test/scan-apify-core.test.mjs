@@ -239,7 +239,7 @@ section('toPipelineLine');
 }
 
 // ── curate (end-to-end over a representative dataset) ────────────────
-section('curate — end-to-end');
+section('curate (end-to-end)');
 const CONFIG = {
   title_filter: TF,
   location_filter: LF,
@@ -349,8 +349,8 @@ const sample = [
   );
 }
 
-// ── markKeptSeen — incremental cross-title dedup (#17) ──────────────
-section('markKeptSeen — resilient incremental writes');
+// ── markKeptSeen (incremental cross-title dedup, #17) ─────────────────
+section('markKeptSeen (resilient incremental writes)');
 {
   const seen = new Set();
   markKeptSeen(seen, [{ platform_url: 'a' }, { platform_url: 'b' }]);
@@ -361,8 +361,9 @@ section('markKeptSeen — resilient incremental writes');
 }
 {
   // A role appearing under two titles must be written once: kept in batch 1,
-  // dropped as 'seen' in batch 2 after markKeptSeen — the invariant that makes
-  // per-title incremental writes safe to resume after an interruption.
+  // dropped as 'seen' in batch 2 after markKeptSeen. That is the invariant
+  // that makes per-title incremental writes safe to resume after an
+  // interruption.
   const cfg2 = { title_filter: TF, location_filter: LF, salary_floor: 180000 };
   const role = {
     platform_url: 'dup1',
