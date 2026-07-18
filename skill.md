@@ -61,7 +61,7 @@ arrive as `ctx.settings`):
   are only meaningful when `remote_only` is not `true`.
 - `title_filter`: `{ positive: [...], negative: [...] }`. A title is kept
   only when it matches at least one positive term and zero negative terms.
-- `location_filter`: `{ allow_remote, dfw_cities: [...] }`. Controls which
+- `location_filter`: `{ allow_remote, cities: [...] }`. Controls which
   on-site locations are kept alongside remote roles.
 - `salary_floor`: drop a job only when it posts a real salary and its top of
   range is below this number. Jobs with no posted salary are kept.
@@ -82,8 +82,8 @@ plugins:
     passes:
       - label: remote
         remote_only: true
-      - label: dfw
-        location: 'Dallas, TX'
+      - label: onsite
+        location: 'Chicago, IL'
         distance: 50
     max_results: 25
 ```

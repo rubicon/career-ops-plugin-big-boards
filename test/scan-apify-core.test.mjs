@@ -6,7 +6,7 @@
  * curation logic (lib/scan-apify-core.mjs). Run: node test/scan-apify-core.test.mjs
  *
  * Covers: term matching (word-boundary), title filter (positive/negative
- * override), location filter (DFW metro + remote), salary floor, location
+ * override), location filter (configured city list + remote), salary floor, location
  * normalization, dedup keys, slugify, pipeline-line formatting, and the
  * end-to-end curate() over a representative dataset modeled on the real
  * 75-record test run (CMO-in-Dallas keep, Chief MEDICAL Officer drop,
@@ -128,10 +128,10 @@ assert(
   'on-site Dallas not remote',
 );
 
-// ── locationAllowed (DFW metro cities + remote) ──────────────────────
+// ── locationAllowed (configured city list + remote) ──────────────────
 section('locationAllowed');
 const LF = {
-  dfw_cities: [
+  cities: [
     'Dallas',
     'Fort Worth',
     'Plano',
@@ -167,7 +167,7 @@ assert(
 assert(locationAllowed({ location: 'Remote', is_remote: true }, LF) === true, 'remote kept');
 assert(
   locationAllowed({ location: 'San Francisco, CA', is_remote: true }, LF) === true,
-  'remote-flagged non-DFW kept',
+  'remote-flagged out-of-list kept',
 );
 
 // ── salaryAboveFloor (conservative: keep when no salary posted) ──────
