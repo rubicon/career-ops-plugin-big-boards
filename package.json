@@ -23,7 +23,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/smoke.mjs",
+    "test": "node test/scan-apify-core.test.mjs && node test/scan-apify.test.mjs && node test/index.test.mjs && node test/smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -61,26 +61,34 @@ As a career-ops plugin, this repo runs inside the engine's sandbox:
 - `humanInTheLoop: true` in the manifest: the plugin only proposes roles into
   the pipeline. It never auto-submits anything.
 
-## Data flow (target shape)
+## Data flow
 
 ```
-ctx.settings (passes:) ──> engine ──> Apify actor run ──> raw job results
-                                                              │
-                                                              ▼
-                                            curation core (filter, dedupe, slugify)
-                                                              │
-                                                              ▼
-                              Job[] { title, url, company, location, description }
-                                                              │
-                                                              ▼
-                                    JD text cached locally; pipeline row references
-                                    the local cached copy, not the bot-blocked board URL
+ctx.settings (titles, passes) ──> engine ──> Apify actor run ──> raw job results
+                                                                       │
+                                                                       ▼
+                                                     curation core (filter, dedupe, slugify)
+                                                                       │
+                                                                       ▼
+                                                description cached to jds/{slug}.md locally
+                                                                       │
+                                                                       ▼
+                                      Job[] { title, url, company, location, _remote_url? }
 ```
+
+The engine caches each kept job's description to `jds/` itself and returns a
+`url` of `local:jds/{slug}.md`, keeping the original board URL as
+`_remote_url`. `Job` does not carry a `description` field: this follows the
+bundled `apify` reference plugin's own pattern
+(`career-ops-exec/plugins/apify/index.mjs`), not the description-passthrough
+shape floated before that pattern was confirmed. The pipeline row therefore
+references the cached JD, not the board's bot-blocked URL, directly out of
+the engine.
 
 ## Current status
 
-The plugin currently ships the career-ops-plugin template's placeholder hook
-while the engine port, curation port, and provider wiring land through their
-own issues. This document describes the target shape; `README.md` and
-`skill.md` are updated to describe actual runtime behavior once the provider
-hook lands.
+The curation core, the engine (`lib/scan-apify.mjs`), and the `provider` hook
+(`index.mjs`) are all wired. `manifest.json` declares `hooks: ["provider"]`,
+and a `provider: big-boards` entry in `portals.yml` is enough to drive a full
+configured scan. `README.md` and `skill.md` describe the actual runtime
+behavior.
