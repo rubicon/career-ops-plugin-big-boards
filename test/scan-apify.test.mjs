@@ -14,11 +14,12 @@
  * salary_maximum, description); company/title values here are synthetic per
  * this repo's "no personal data in the repo" rule.
  *
- * Covers: buildPasses' two-pass shape, JD caching (cacheJobDescription),
- * the description -> local-url mapping (toJob), and the end-to-end engine
- * (scanApify): token handling, required titles, per-pass resilience,
- * cross-title dedup, and that no 1Password / raw sockets / global fetch
- * made it into the source.
+ * Covers: buildPasses' config-driven passes list (settings.passes, the
+ * omitted-config single-remote-pass default, and a configured multi-pass
+ * list), JD caching (cacheJobDescription), the description -> local-url
+ * mapping (toJob), and the end-to-end engine (scanApify): token handling,
+ * required titles, per-pass resilience, cross-title dedup, and that no
+ * 1Password / raw sockets / global fetch made it into the source.
  */
 
 import { mkdtempSync, rmSync, readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -89,7 +90,7 @@ const LONG_DESCRIPTION =
 function permissiveConfig(titles) {
   return {
     title_filter: { positive: titles, negative: [] },
-    location_filter: { dfw_cities: [], allow_remote: true },
+    location_filter: { cities: [], allow_remote: true },
     salary_floor: 0,
   };
 }
@@ -112,46 +113,94 @@ function rawJob(overrides = {}) {
 // ── buildPasses ──────────────────────────────────────────────────────
 section('buildPasses');
 {
+  // settings.passes omitted -> a single remote-only pass, geography-agnostic
   const passes = buildPasses({}, 'VP Marketing');
-  check(passes.length === 2, 'returns exactly two passes');
-  const local = passes.find((p) => p.label === 'local');
-  const remote = passes.find((p) => p.label === 'remote');
-  check(!!local && !!remote, 'labels are local and remote');
-  check(local.input.location === 'Dallas, TX', 'local pass defaults location to Dallas, TX');
-  check(local.input.distance === 75, 'local pass defaults distance to 75');
-  check(local.input.remote_only === false, 'local pass is not remote_only');
-  check(remote.input.remote_only === true, 'remote pass is remote_only');
-  check(local.input.keyword === 'VP Marketing', 'keyword threaded into local pass');
-  check(remote.input.keyword === 'VP Marketing', 'keyword threaded into remote pass');
+  check(passes.length === 1, 'omitted passes config defaults to exactly one pass');
+  check(passes[0].label === 'remote', 'default pass is labeled remote');
+  check(passes[0].input.remote_only === true, 'default pass is remote_only');
+  check(passes[0].input.location === undefined, 'default pass carries no location');
+  check(passes[0].input.distance === undefined, 'default pass carries no distance');
+  check(passes[0].input.keyword === 'VP Marketing', 'keyword threaded into the default pass');
+  check(passes[0].input.country === 'United States', 'defaults country to United States');
   check(
-    local.input.country === 'United States' && remote.input.country === 'United States',
-    'defaults country to United States',
-  );
-  check(
-    Array.isArray(local.input.platforms) && local.input.platforms.includes('LinkedIn'),
+    Array.isArray(passes[0].input.platforms) && passes[0].input.platforms.includes('LinkedIn'),
     'defaults platforms to the big boards',
   );
 }
 {
+  // an explicit empty passes list is also treated as "no passes configured"
+  const passes = buildPasses({ passes: [] }, 'VP Marketing');
+  check(
+    passes.length === 1 && passes[0].label === 'remote' && passes[0].input.remote_only === true,
+    'an empty passes array also falls back to the single remote-only default',
+  );
+}
+{
+  // settings.passes is read verbatim: label, location, distance, remote_only
   const passes = buildPasses(
     {
-      location: 'Austin, TX',
-      distance: 25,
+      passes: [
+        { label: 'local', location: 'Austin, TX', distance: 25 },
+        { label: 'remote', remote_only: true },
+      ],
+    },
+    'Head of Growth',
+  );
+  check(passes.length === 2, 'a configured two-pass list is honored');
+  const local = passes.find((p) => p.label === 'local');
+  const remote = passes.find((p) => p.label === 'remote');
+  check(!!local && !!remote, 'configured labels are threaded through');
+  check(
+    local.input.location === 'Austin, TX',
+    'configured location is threaded through verbatim, not a hardcoded default',
+  );
+  check(local.input.distance === 25, 'configured distance is threaded through verbatim');
+  check(local.input.remote_only === false, 'a pass without remote_only: true is not remote_only');
+  check(remote.input.remote_only === true, 'a pass with remote_only: true is remote_only');
+  check(remote.input.location === undefined, 'the remote pass carries no location');
+  check(
+    local.input.keyword === 'Head of Growth' && remote.input.keyword === 'Head of Growth',
+    'keyword threaded into every configured pass',
+  );
+}
+{
+  // an arbitrary three-pass list proves the shape isn't hardcoded to a
+  // "local + remote" pair
+  const passes = buildPasses(
+    {
+      passes: [
+        { label: 'chicago', location: 'Chicago, IL', distance: 50 },
+        { label: 'seattle', location: 'Seattle, WA', distance: 30 },
+        { label: 'remote', remote_only: true },
+      ],
+    },
+    'CMO',
+  );
+  check(passes.length === 3, 'a three-entry configured passes list produces three passes');
+  check(
+    passes.map((p) => p.label).join(',') === 'chicago,seattle,remote',
+    'pass order and labels are preserved as configured',
+  );
+}
+{
+  // shared settings (country/max_results/posted_since/platforms) still apply
+  // to every configured pass, on top of the passes list itself
+  const passes = buildPasses(
+    {
       country: 'Canada',
       max_results: 10,
       posted_since: '7 days',
       platforms: ['Indeed'],
+      passes: [{ label: 'toronto', location: 'Toronto, ON', distance: 40 }],
     },
     'Head of Growth',
   );
-  const local = passes.find((p) => p.label === 'local');
-  check(local.input.location === 'Austin, TX', 'settings.location overrides default');
-  check(local.input.distance === 25, 'settings.distance overrides default');
-  check(local.input.country === 'Canada', 'settings.country overrides default');
-  check(local.input.max_results === 10, 'settings.max_results overrides default');
-  check(local.input.posted_since === '7 days', 'settings.posted_since overrides default');
+  const toronto = passes[0];
+  check(toronto.input.country === 'Canada', 'settings.country overrides default');
+  check(toronto.input.max_results === 10, 'settings.max_results overrides default');
+  check(toronto.input.posted_since === '7 days', 'settings.posted_since overrides default');
   check(
-    local.input.platforms.length === 1 && local.input.platforms[0] === 'Indeed',
+    toronto.input.platforms.length === 1 && toronto.input.platforms[0] === 'Indeed',
     'settings.platforms overrides default',
   );
 }
@@ -263,7 +312,14 @@ await withTmpCwd(async () => {
   const calls = [];
   const ctx = {
     env: { APIFY_TOKEN: 'secret-token' },
-    settings: { titles: ['VP Marketing'], ...permissiveConfig(['VP Marketing']) },
+    settings: {
+      titles: ['VP Marketing'],
+      passes: [
+        { label: 'local', location: 'Somewhere, ST', distance: 50 },
+        { label: 'remote', remote_only: true },
+      ],
+      ...permissiveConfig(['VP Marketing']),
+    },
     fetchJson: async (url, opts) => {
       calls.push({ url, opts, input: JSON.parse(opts.body) });
       if (calls.length === 1) return [rawJob()]; // local pass
@@ -272,7 +328,7 @@ await withTmpCwd(async () => {
   };
   const jobs = await scanApify(ctx);
 
-  check(calls.length === 2, 'calls fetchJson once per pass (local + remote)');
+  check(calls.length === 2, 'calls fetchJson once per configured pass (local + remote)');
   check(
     calls.every((c) => c.url === ENDPOINT),
     'every call hits the documented sync endpoint',
@@ -302,10 +358,10 @@ await withTmpCwd(async () => {
   const ctx = {
     env: { APIFY_TOKEN: 'tok' },
     settings: { titles: ['VP Marketing'], ...permissiveConfig(['VP Marketing']) },
-    fetchJson: async () => [], // both passes return nothing
+    fetchJson: async () => [], // the default remote-only pass returns nothing
   };
   const jobs = await scanApify(ctx);
-  check(Array.isArray(jobs) && jobs.length === 0, 'returns [] when both passes yield no jobs');
+  check(Array.isArray(jobs) && jobs.length === 0, 'returns [] when the pass yields no jobs');
   check(!existsSync('jds'), 'no jds/ directory created, and no throw, when nothing was kept');
 });
 
@@ -314,7 +370,14 @@ await withTmpCwd(async () => {
   const logs = [];
   const ctx = {
     env: { APIFY_TOKEN: 'tok' },
-    settings: { titles: ['VP Marketing'], ...permissiveConfig(['VP Marketing']) },
+    settings: {
+      titles: ['VP Marketing'],
+      passes: [
+        { label: 'local', location: 'Somewhere, ST', distance: 50 },
+        { label: 'remote', remote_only: true },
+      ],
+      ...permissiveConfig(['VP Marketing']),
+    },
     log: (msg) => logs.push(msg),
     fetchJson: async (url, opts) => {
       const input = JSON.parse(opts.body);
@@ -366,6 +429,10 @@ await withTmpCwd(async () => {
     env: { APIFY_TOKEN: 'tok' },
     settings: {
       titles: ['VP Marketing', 'Head of Marketing'],
+      passes: [
+        { label: 'local', location: 'Somewhere, ST', distance: 50 },
+        { label: 'remote', remote_only: true },
+      ],
       ...permissiveConfig(['VP Marketing', 'Head of Marketing']),
     },
     log: () => {},
@@ -405,7 +472,7 @@ await withTmpCwd(async () => {
     settings: {
       titles: ['VP Marketing'],
       title_filter: { positive: ['VP Marketing'], negative: [] },
-      location_filter: { dfw_cities: [], allow_remote: true },
+      location_filter: { cities: [], allow_remote: true },
       salary_floor: 0,
     },
     fetchJson: async () => [
@@ -438,6 +505,10 @@ section('source invariants');
     src.includes('ctx.env.APIFY_TOKEN') ||
       /ctx\s*&&\s*ctx\.env\s*&&\s*ctx\.env\.APIFY_TOKEN/.test(src),
     'token is read from ctx.env.APIFY_TOKEN only',
+  );
+  check(
+    !/Dallas|DFW/.test(src),
+    'no hardcoded city default remains in the engine (settings.passes is geography-agnostic)',
   );
 }
 

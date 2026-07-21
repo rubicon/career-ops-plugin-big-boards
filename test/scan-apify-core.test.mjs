@@ -6,7 +6,7 @@
  * curation logic (lib/scan-apify-core.mjs). Run: node test/scan-apify-core.test.mjs
  *
  * Covers: term matching (word-boundary), title filter (positive/negative
- * override), location filter (DFW metro + remote), salary floor, location
+ * override), location filter (configured city list + remote), salary floor, location
  * normalization, dedup keys, slugify, pipeline-line formatting, and the
  * end-to-end curate() over a representative dataset modeled on the real
  * 75-record test run (CMO-in-Dallas keep, Chief MEDICAL Officer drop,
@@ -104,6 +104,18 @@ assert(
 assert(titleAllowed('Door to Door Lead Generation', TF) === false, 'door-to-door rejected');
 assert(titleAllowed('VP of Marketing', TF) === true, 'VP of Marketing allowed');
 
+// Empty/unset positive means "no title filtering" (allow all), not "drop
+// everything". The actor's cost is already spent at fetch time, so an
+// unset title_filter must not throw away every fetched result (#23).
+assert(titleAllowed('anything', undefined) === true, 'unset title_filter allows any title');
+assert(titleAllowed('x', { positive: [] }) === true, 'empty positive list allows any title');
+assert(
+  titleAllowed('X', { negative: ['X'] }) === false,
+  'empty positive still honors negative filter',
+);
+assert(titleAllowed('X', { positive: ['X'] }) === true, 'non-empty positive matches');
+assert(titleAllowed('Eng', { positive: ['VP'] }) === false, 'non-empty positive rejects non-match');
+
 // ── isRemoteJob ──────────────────────────────────────────────────────
 section('isRemoteJob');
 assert(
@@ -116,10 +128,10 @@ assert(
   'on-site Dallas not remote',
 );
 
-// ── locationAllowed (DFW metro cities + remote) ──────────────────────
+// ── locationAllowed (configured city list + remote) ──────────────────
 section('locationAllowed');
 const LF = {
-  dfw_cities: [
+  cities: [
     'Dallas',
     'Fort Worth',
     'Plano',
@@ -155,7 +167,7 @@ assert(
 assert(locationAllowed({ location: 'Remote', is_remote: true }, LF) === true, 'remote kept');
 assert(
   locationAllowed({ location: 'San Francisco, CA', is_remote: true }, LF) === true,
-  'remote-flagged non-DFW kept',
+  'remote-flagged out-of-list kept',
 );
 
 // ── salaryAboveFloor (conservative: keep when no salary posted) ──────
@@ -227,7 +239,7 @@ section('toPipelineLine');
 }
 
 // ── curate (end-to-end over a representative dataset) ────────────────
-section('curate — end-to-end');
+section('curate (end-to-end)');
 const CONFIG = {
   title_filter: TF,
   location_filter: LF,
@@ -313,8 +325,32 @@ const sample = [
   );
 }
 
-// ── markKeptSeen — incremental cross-title dedup (#17) ──────────────
-section('markKeptSeen — resilient incremental writes');
+{
+  // Regression for #23: an unset title_filter (config === {}) must not drop
+  // every job. The job still needs to clear the location/salary defaults,
+  // so mark it remote (the default location_filter allows remote).
+  const job = {
+    platform_url: 'u-empty-config',
+    company_name: 'AnyCo',
+    title: 'Anything At All',
+    location: 'Remote',
+    is_remote: true,
+    salary_minimum: null,
+    salary_maximum: null,
+  };
+  const { kept, dropped } = curate([job], {}, new Set());
+  assert(
+    kept.length === 1 && kept[0].platform_url === 'u-empty-config',
+    'empty config keeps the job instead of dropping it as title',
+  );
+  assert(
+    !dropped.some((d) => d.reason === 'title'),
+    'no job is dropped for reason "title" under an empty config',
+  );
+}
+
+// ── markKeptSeen (incremental cross-title dedup, #17) ─────────────────
+section('markKeptSeen (resilient incremental writes)');
 {
   const seen = new Set();
   markKeptSeen(seen, [{ platform_url: 'a' }, { platform_url: 'b' }]);
@@ -325,8 +361,9 @@ section('markKeptSeen — resilient incremental writes');
 }
 {
   // A role appearing under two titles must be written once: kept in batch 1,
-  // dropped as 'seen' in batch 2 after markKeptSeen — the invariant that makes
-  // per-title incremental writes safe to resume after an interruption.
+  // dropped as 'seen' in batch 2 after markKeptSeen. That is the invariant
+  // that makes per-title incremental writes safe to resume after an
+  // interruption.
   const cfg2 = { title_filter: TF, location_filter: LF, salary_floor: 180000 };
   const role = {
     platform_url: 'dup1',

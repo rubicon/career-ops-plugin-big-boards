@@ -110,8 +110,12 @@ await withTmpCwd(async () => {
     env: { APIFY_TOKEN: 'secret-token' },
     settings: {
       titles: ['VP Marketing'],
+      passes: [
+        { label: 'local', location: 'Denver, CO', distance: 75 },
+        { label: 'remote', remote_only: true },
+      ],
       title_filter: { positive: ['VP Marketing'], negative: [] },
-      location_filter: { dfw_cities: [], allow_remote: true },
+      location_filter: { allow_remote: true },
       salary_floor: 0,
     },
     fetchJson: async (url, opts) => {
