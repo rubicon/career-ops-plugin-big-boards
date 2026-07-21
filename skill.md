@@ -59,9 +59,11 @@ arrive as `ctx.settings`):
   empty, the plugin runs a single remote-only pass. Each entry is
   `{ label, location, distance, remote_only }`; `location` and `distance`
   are only meaningful when `remote_only` is not `true`.
-- `title_filter`: `{ positive: [...], negative: [...] }`. A title is kept
-  only when it matches at least one positive term and zero negative terms.
-- `location_filter`: `{ allow_remote, dfw_cities: [...] }`. Controls which
+- `title_filter`: `{ positive: [...], negative: [...] }`. A title is dropped
+  if it matches any negative term. When `positive` is empty or unset, every
+  other title is kept (no title filtering); when `positive` is non-empty,
+  the title must also match at least one positive term.
+- `location_filter`: `{ allow_remote, cities: [...] }`. Controls which
   on-site locations are kept alongside remote roles.
 - `salary_floor`: drop a job only when it posts a real salary and its top of
   range is below this number. Jobs with no posted salary are kept.
@@ -82,8 +84,8 @@ plugins:
     passes:
       - label: remote
         remote_only: true
-      - label: dfw
-        location: 'Dallas, TX'
+      - label: onsite
+        location: 'Chicago, IL'
         distance: 50
     max_results: 25
 ```

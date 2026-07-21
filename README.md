@@ -61,7 +61,7 @@ Settings live under `plugins.big-boards` in `config/plugins.yml`:
 | `titles`          | none (required)                                       | Search titles to scan. The plugin throws if this is unset or empty.      |
 | `passes`          | one remote-only pass                                  | Scan passes per title: `{ label, location, distance, remote_only }`.     |
 | `title_filter`    | none                                                  | `{ positive: [...], negative: [...] }` term filters on the job title.    |
-| `location_filter` | none                                                  | `{ allow_remote, dfw_cities: [...] }` filters on-site locations.         |
+| `location_filter` | none                                                  | `{ allow_remote, cities: [...] }` filters on-site locations.             |
 | `salary_floor`    | none                                                  | Drop a job only when it posts a salary whose top of range is below this. |
 | `max_results`     | `25`                                                  | Per-pass result cap from the actor.                                      |
 | `platforms`       | `['LinkedIn', 'Indeed', 'ZipRecruiter', 'Glassdoor']` | Boards to scan.                                                          |
@@ -80,8 +80,8 @@ plugins:
     passes:
       - label: remote
         remote_only: true
-      - label: dfw
-        location: 'Dallas, TX'
+      - label: onsite
+        location: 'Chicago, IL'
         distance: 50
     max_results: 25
 ```

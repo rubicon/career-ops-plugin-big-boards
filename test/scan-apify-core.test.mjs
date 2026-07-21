@@ -6,7 +6,7 @@
  * curation logic (lib/scan-apify-core.mjs). Run: node test/scan-apify-core.test.mjs
  *
  * Covers: term matching (word-boundary), title filter (positive/negative
- * override), location filter (DFW metro + remote), salary floor, location
+ * override), location filter (configured city list + remote), salary floor, location
  * normalization, dedup keys, slugify, pipeline-line formatting, and the
  * end-to-end curate() over a representative dataset modeled on the real
  * 75-record test run (CMO-in-Dallas keep, Chief MEDICAL Officer drop,
@@ -128,10 +128,10 @@ assert(
   'on-site Dallas not remote',
 );
 
-// ── locationAllowed (DFW metro cities + remote) ──────────────────────
+// ── locationAllowed (configured city list + remote) ──────────────────
 section('locationAllowed');
 const LF = {
-  dfw_cities: [
+  cities: [
     'Dallas',
     'Fort Worth',
     'Plano',
@@ -167,7 +167,7 @@ assert(
 assert(locationAllowed({ location: 'Remote', is_remote: true }, LF) === true, 'remote kept');
 assert(
   locationAllowed({ location: 'San Francisco, CA', is_remote: true }, LF) === true,
-  'remote-flagged non-DFW kept',
+  'remote-flagged out-of-list kept',
 );
 
 // ── salaryAboveFloor (conservative: keep when no salary posted) ──────
@@ -239,7 +239,7 @@ section('toPipelineLine');
 }
 
 // ── curate (end-to-end over a representative dataset) ────────────────
-section('curate — end-to-end');
+section('curate (end-to-end)');
 const CONFIG = {
   title_filter: TF,
   location_filter: LF,
@@ -349,8 +349,8 @@ const sample = [
   );
 }
 
-// ── markKeptSeen — incremental cross-title dedup (#17) ──────────────
-section('markKeptSeen — resilient incremental writes');
+// ── markKeptSeen (incremental cross-title dedup, #17) ─────────────────
+section('markKeptSeen (resilient incremental writes)');
 {
   const seen = new Set();
   markKeptSeen(seen, [{ platform_url: 'a' }, { platform_url: 'b' }]);
@@ -361,8 +361,9 @@ section('markKeptSeen — resilient incremental writes');
 }
 {
   // A role appearing under two titles must be written once: kept in batch 1,
-  // dropped as 'seen' in batch 2 after markKeptSeen — the invariant that makes
-  // per-title incremental writes safe to resume after an interruption.
+  // dropped as 'seen' in batch 2 after markKeptSeen. That is the invariant
+  // that makes per-title incremental writes safe to resume after an
+  // interruption.
   const cfg2 = { title_filter: TF, location_filter: LF, salary_floor: 180000 };
   const role = {
     platform_url: 'dup1',

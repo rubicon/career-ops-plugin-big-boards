@@ -90,7 +90,7 @@ const LONG_DESCRIPTION =
 function permissiveConfig(titles) {
   return {
     title_filter: { positive: titles, negative: [] },
-    location_filter: { dfw_cities: [], allow_remote: true },
+    location_filter: { cities: [], allow_remote: true },
     salary_floor: 0,
   };
 }
@@ -164,8 +164,8 @@ section('buildPasses');
   );
 }
 {
-  // an arbitrary, non-DFW, three-pass list proves the shape isn't hardcoded
-  // to a "local + remote" pair
+  // an arbitrary three-pass list proves the shape isn't hardcoded to a
+  // "local + remote" pair
   const passes = buildPasses(
     {
       passes: [
@@ -472,7 +472,7 @@ await withTmpCwd(async () => {
     settings: {
       titles: ['VP Marketing'],
       title_filter: { positive: ['VP Marketing'], negative: [] },
-      location_filter: { dfw_cities: [], allow_remote: true },
+      location_filter: { cities: [], allow_remote: true },
       salary_floor: 0,
     },
     fetchJson: async () => [
@@ -508,7 +508,7 @@ section('source invariants');
   );
   check(
     !/Dallas|DFW/.test(src),
-    'no hardcoded Dallas/DFW default remains in the engine (settings.passes is geography-agnostic)',
+    'no hardcoded city default remains in the engine (settings.passes is geography-agnostic)',
   );
 }
 
