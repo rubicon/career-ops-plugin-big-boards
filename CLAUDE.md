@@ -58,9 +58,18 @@ to `main`. Never push directly to `main`.
 
 ## Current build status
 
-The plugin currently ships the career-ops-plugin template's placeholder
-`ingest` hook while the engine port, curation port, and `provider` hook
-wiring land through their own issues, ported from the fork-local `scan-apify`
-implementation in `career-ops-exec` (a read-only source, not a dependency).
-Do not change `manifest.json` hooks or `index.mjs` exports as part of
-conformance or documentation work; that is the provider-wiring issue's scope.
+The `provider` hook is wired: `manifest.json` declares `hooks: ["provider"]`
+and `index.mjs` exports a `provider` hook that calls `scanApify(ctx)`
+(`lib/scan-apify.mjs`) and returns its `Job[]`.
+
+The hook's shape follows career-ops-exec's actual host contract, not a plain
+`async provider(ctx)` function: `plugins/_types.js` (read-only reference,
+not a dependency) types `provider` as `{ id, detect?, fetch(entry, ctx) }`,
+byte-identical to a core `providers/*.mjs` Provider, and `plugins/_engine.mjs`
+`importHook` rejects anything else for the `provider` kind. `index.mjs`
+exports `{ id: 'big-boards', detect: () => null, async fetch(_entry, ctx) {
+return scanApify(ctx); } }`; `entry` (the portals.yml `tracked_companies`
+row that set `provider: big-boards`) is accepted to satisfy the contract and
+otherwise unused, since all of this plugin's configuration comes from
+`ctx.settings` (`config/plugins.yml`), and `scanApify` is self-contained
+given `ctx`.
