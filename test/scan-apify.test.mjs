@@ -507,7 +507,7 @@ section('source invariants');
     'token is read from ctx.env.APIFY_TOKEN only',
   );
   check(
-    !/Dallas/.test(src),
+    !/Dallas|DFW/.test(src),
     'no hardcoded city default remains in the engine (settings.passes is geography-agnostic)',
   );
 }
