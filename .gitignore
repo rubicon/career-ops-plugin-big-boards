@@ -1,5 +1,7 @@
 # Dependencies
-node_modules/
+# No trailing slash: worktrees get a node_modules symlink, and a directory-only
+# pattern does not match a symlink.
+node_modules
 
 # Generated output
 output/
