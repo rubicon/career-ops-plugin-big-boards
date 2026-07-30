@@ -5,8 +5,6 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [0.1.0] - 2026-07-30
 
 First published release.
@@ -26,6 +24,8 @@ First published release.
 
 - Release automation addresses its 1Password credential item by UUID, so renaming that item no longer breaks the release run ([#34](https://github.com/rubicon/career-ops-plugin-big-boards/pull/34)).
 - The release-please baseline was set so this first release could be cut at 0.1.0 rather than release-please's default first-release 1.0.0 ([#28](https://github.com/rubicon/career-ops-plugin-big-boards/pull/28)).
+
+Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
 [Unreleased]: https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.0
