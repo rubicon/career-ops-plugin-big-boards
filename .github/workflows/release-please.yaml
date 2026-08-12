@@ -39,6 +39,20 @@ jobs:
         with:
           app-id: ${{ steps.op.outputs.RELEASE_PLEASE_APP_ID }}
           private-key: ${{ steps.op.outputs.RELEASE_PLEASE_APP_KEY }}
+          # Without these the token carries every permission the App installation
+          # holds, which is far more than release-please uses. Scope it to what the
+          # action actually does: commit and tag (contents), and open and update the
+          # release PR (pull-requests).
+          #
+          # Deliberately NOT permission-issues. The autorelease labels are an issues
+          # permission even on a PR, so requesting it looks right — but the
+          # rubicon-release-please App grants only metadata plus code and pull
+          # requests, and create-github-app-token fails the whole request when any
+          # requested scope exceeds the grant. That took releases in career-ops-capture
+          # down for two weeks. Verified there: with issues dropped, the run succeeds
+          # and the release PR still carries "autorelease: pending".
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Run release-please
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
