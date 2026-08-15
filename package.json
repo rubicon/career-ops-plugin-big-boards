@@ -1,6 +1,6 @@
 {
   "name": "career-ops-plugin-big-boards",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Aggregate job-board scan via Apify, pulling roles from LinkedIn, Indeed, ZipRecruiter, Glassdoor, and other Apify-reachable sources with full job-description capture.",
   "license": "MIT",
   "author": "Dax Davis <dax@rubicontv.com>",

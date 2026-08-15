@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.0...v0.1.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **release:** drop the release-as pin so versions can advance ([#50](https://github.com/rubicon/career-ops-plugin-big-boards/issues/50)) ([d246321](https://github.com/rubicon/career-ops-plugin-big-boards/commit/d246321db16f8adea3904ed3f57597d7c82bce33)), closes [#49](https://github.com/rubicon/career-ops-plugin-big-boards/issues/49)
+
 ## [0.1.0] - 2026-07-30
 
 First published release.
