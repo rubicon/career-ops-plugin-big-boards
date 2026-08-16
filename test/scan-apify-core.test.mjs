@@ -23,7 +23,6 @@ import {
   jobKey,
   dedupeJobs,
   slugify,
-  toPipelineLine,
   curate,
   markKeptSeen,
 } from '../lib/scan-apify-core.mjs';
@@ -223,20 +222,6 @@ assert(
   'slugifies with & and spaces',
 );
 assert(slugify('CodePath.org') === 'codepath-org', 'slugifies a dot');
-
-// ── toPipelineLine ──────────────────────────────────────────────────
-section('toPipelineLine');
-{
-  const line = toPipelineLine({
-    platform_url: 'https://x.co/j/1',
-    company_name: 'Qualitest',
-    title: 'Chief Marketing Officer',
-  });
-  assert(
-    line === '- [ ] https://x.co/j/1 | Qualitest | Chief Marketing Officer',
-    'pipeline checkbox line format',
-  );
-}
 
 // ── curate (end-to-end over a representative dataset) ────────────────
 section('curate (end-to-end)');
