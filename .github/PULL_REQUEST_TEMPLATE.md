@@ -6,6 +6,14 @@ Describe what this pull request changes and why.
 
 Closes #
 
+## Decision record
+
+Either the path to the record this change adds or implements, or
+`not required - <reason>`. See [`docs/adr/README.md`](../docs/adr/README.md)
+for when one is warranted.
+
+ADR:
+
 ## Type of change
 
 - [ ] Bug fix (non-breaking change that fixes an issue)
