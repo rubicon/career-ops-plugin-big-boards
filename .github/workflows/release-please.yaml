@@ -30,14 +30,14 @@ jobs:
           version: 2.35.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          RELEASE_PLEASE_APP_ID: 'op://Automation/lnacky4l2tmlihrockbutkub7y/app id'
+          RELEASE_PLEASE_CLIENT_ID: 'op://Automation/lnacky4l2tmlihrockbutkub7y/client id'
           RELEASE_PLEASE_APP_KEY: 'op://Automation/lnacky4l2tmlihrockbutkub7y/private key'
 
       - name: Mint app token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
-          app-id: ${{ steps.op.outputs.RELEASE_PLEASE_APP_ID }}
+          client-id: ${{ steps.op.outputs.RELEASE_PLEASE_CLIENT_ID }}
           private-key: ${{ steps.op.outputs.RELEASE_PLEASE_APP_KEY }}
           # Without these the token carries every permission the App installation
           # holds, which is far more than release-please uses. Scope it to what the
