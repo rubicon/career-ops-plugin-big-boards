@@ -67,7 +67,9 @@ arrive as `ctx.settings`):
   on-site locations are kept alongside remote roles.
 - `salary_floor`: drop a job only when it posts a real salary and its top of
   range is below this number. Jobs with no posted salary are kept.
-- `max_results`: per-pass result cap from the actor. Default `25`.
+- `max_results`: result cap per platform per pass, from the actor. Default `25`.
+- `timeout_ms`: milliseconds to wait for one actor run. Default `180000`.
+  Apify's sync endpoint returns 408 after 300000.
 - `platforms`: boards to scan. Default `['LinkedIn', 'Indeed', 'ZipRecruiter', 'Glassdoor']`.
 - `country`: default `'United States'`.
 - `posted_since`: default `'14 days'`.
