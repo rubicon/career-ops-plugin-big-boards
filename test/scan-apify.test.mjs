@@ -250,6 +250,24 @@ await withTmpCwd(() => {
   check(!('_remote_url' in uncachedJob), 'no _remote_url field when nothing is cached');
 });
 
+// ── object-shaped location (actor build 1.0.52) ─────────────────────
+// Recorded shapes: test/fixtures/all-jobs-scraper-1.0.52.json. The actor now
+// returns location as { raw, locality, region, ... } instead of a string.
+const RECORDED = JSON.parse(
+  readFileSync(new URL('./fixtures/all-jobs-scraper-1.0.52.json', import.meta.url), 'utf-8'),
+);
+section('toJob and the JD cache: object-shaped location');
+await withTmpCwd(() => {
+  const job = toJob(RECORDED.dfwPass[0]);
+  check(job.location === 'Dallas, TX', 'toJob returns the raw location text');
+  const cached = readFileSync(job.url.replace(/^local:/, ''), 'utf-8');
+  check(
+    cached.includes('location: "Dallas, TX"'),
+    'the cached JD frontmatter carries the raw text',
+  );
+  check(!cached.includes('[object Object]'), 'the cached JD never contains [object Object]');
+});
+
 // ── scanApify (end-to-end, hermetic) ────────────────────────────────
 section('scanApify: token and settings validation');
 {
@@ -363,6 +381,89 @@ await withTmpCwd(async () => {
   const jobs = await scanApify(ctx);
   check(Array.isArray(jobs) && jobs.length === 0, 'returns [] when the pass yields no jobs');
   check(!existsSync('jds'), 'no jds/ directory created, and no throw, when nothing was kept');
+});
+
+section('scanApify: a recorded pass with object locations');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: {
+      titles: ['VP Marketing'],
+      passes: [{ label: 'dfw', location: 'Dallas, TX', distance: 75 }],
+      title_filter: { positive: ['VP Marketing'], negative: [] },
+      location_filter: { cities: ['Dallas', 'Plano', 'Frisco'], allow_remote: true },
+      salary_floor: 0,
+    },
+    fetchJson: async () => RECORDED.dfwPass,
+  };
+  const jobs = await scanApify(ctx);
+  check(jobs.length === 5, 'keeps the three city matches and the two remote-flagged jobs');
+  check(
+    jobs.map((j) => j.location).join('|') ===
+      'Dallas, TX|Plano, TX|Frisco, TX 75034|Austin, TX|Denver, CO',
+    'each returned job carries its raw location text',
+  );
+  check(
+    jobs.every((j) => typeof j.location === 'string' && !j.location.includes('[object Object]')),
+    'every returned job location is a string, never an object',
+  );
+});
+
+section('scanApify: a pass that returns 0 items is reported');
+await withTmpCwd(async () => {
+  // freePlanLimitPass is the recorded response of a run that hit the actor's
+  // free-plan limit: HTTP 201, run SUCCEEDED, body [].
+  const logs = [];
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: {
+      titles: ['VP Marketing'],
+      passes: [
+        { label: 'dfw', location: 'Dallas, TX', distance: 75 },
+        { label: 'remote', remote_only: true },
+      ],
+      ...permissiveConfig(['VP Marketing']),
+    },
+    log: (msg) => logs.push(msg),
+    fetchJson: async () => RECORDED.freePlanLimitPass,
+  };
+  const jobs = await scanApify(ctx);
+  check(Array.isArray(jobs) && jobs.length === 0, 'still returns [] for an all-empty run');
+  check(logs.length === 2, 'logs one warning per empty pass');
+  check(
+    logs[0]?.includes('VP Marketing') && logs[0].includes('[dfw]'),
+    'the first warning names the title and the pass',
+  );
+  check(logs[1]?.includes('[remote]'), 'the second warning names its own pass');
+  check(
+    logs.length > 0 && logs.every((l) => /returned 0 items/.test(l)),
+    'each warning says the pass returned 0 items',
+  );
+  check(
+    logs.length > 0 && logs.every((l) => /free-plan limit/i.test(l)),
+    'each warning names the free-plan limit as a known cause',
+  );
+});
+await withTmpCwd(async () => {
+  // Negative control: a pass that returns jobs must not warn.
+  const logs = [];
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: {
+      titles: ['VP Marketing'],
+      passes: [
+        { label: 'dfw', location: 'Dallas, TX', distance: 75 },
+        { label: 'remote', remote_only: true },
+      ],
+      ...permissiveConfig(['VP Marketing']),
+    },
+    log: (msg) => logs.push(msg),
+    fetchJson: async (url, opts) =>
+      JSON.parse(opts.body).remote_only ? RECORDED.freePlanLimitPass : RECORDED.dfwPass,
+  };
+  await scanApify(ctx);
+  check(logs.length === 1, 'warns only for the empty pass, not for the pass that returned jobs');
+  check(logs[0]?.includes('[remote]'), 'the warning is for the empty remote pass');
 });
 
 section('scanApify: resilience, one failed pass does not abort the run');
