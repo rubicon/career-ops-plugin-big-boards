@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.2...v0.1.3) (2026-10-12)
+
+
+### Features
+
+* keep and tag LinkedIn jobs with no remote signal in remote-only passes ([#69](https://github.com/rubicon/career-ops-plugin-big-boards/issues/69)) ([8bf1266](https://github.com/rubicon/career-ops-plugin-big-boards/commit/8bf12665b36a15c6267f8090fdaac8590b71dbd3)), closes [#66](https://github.com/rubicon/career-ops-plugin-big-boards/issues/66)
+
 ## [0.1.2](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.1...v0.1.2) (2026-10-11)
 
 
