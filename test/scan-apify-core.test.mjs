@@ -432,6 +432,151 @@ section('curate over a recorded actor pass (object locations)');
   );
 }
 
+// ── remote-only pass: LinkedIn jobs with no remote signal (issue #66) ──
+// LinkedIn sets neither is_remote nor work_mode, so a remote role arrives
+// with is_remote null and a city in location. Shapes follow the recorded
+// LinkedIn records in the fixture above; values are synthetic. The engine
+// marks each job that came from a remote_only pass with _remote_only_pass.
+section('curate: remote-only pass, LinkedIn jobs with no remote signal');
+{
+  const cfg = {
+    title_filter: { positive: ['VP Marketing'], negative: [] },
+    location_filter: { cities: ['Dallas', 'Plano', 'Frisco'], allow_remote: true },
+    salary_floor: 0,
+  };
+  const linkedin = (overrides = {}) => ({
+    ...RECORDED.dfwPass[2], // LinkedIn, is_remote null, city-only location
+    _remote_only_pass: true,
+    ...overrides,
+  });
+
+  {
+    const { kept, dropped } = curate([linkedin()], cfg, new Set());
+    assert(
+      kept.length === 1 && dropped.length === 0,
+      'keeps a remote-pass LinkedIn job the city filter would drop',
+    );
+    assert(
+      kept.length === 1 && kept[0].work_arrangement_unknown === true,
+      'tags the kept job as work arrangement unknown',
+    );
+  }
+  {
+    const { kept } = curate(
+      [linkedin({ platform_url: 'u-dallas', location: { raw: 'Dallas, TX' } })],
+      cfg,
+      new Set(),
+    );
+    assert(
+      kept.length === 1 && kept[0].work_arrangement_unknown === true,
+      'tags a remote-pass LinkedIn job even when the city filter would have kept it',
+    );
+  }
+  {
+    const { kept } = curate(
+      [linkedin({ platform_url: 'u-remote-text', location: { raw: 'Remote - United States' } })],
+      cfg,
+      new Set(),
+    );
+    assert(
+      kept.length === 1 && !('work_arrangement_unknown' in kept[0]),
+      'does not tag when the location text says remote',
+    );
+  }
+  {
+    const { kept } = curate(
+      [linkedin({ platform_url: 'u-flagged', is_remote: true })],
+      cfg,
+      new Set(),
+    );
+    assert(
+      kept.length === 1 && !('work_arrangement_unknown' in kept[0]),
+      'does not tag when the actor flagged the job remote',
+    );
+  }
+  {
+    const { kept } = curate(
+      [linkedin({ platform_url: 'u-lower', platform: 'linkedin' })],
+      cfg,
+      new Set(),
+    );
+    assert(
+      kept.length === 1 && kept[0].work_arrangement_unknown === true,
+      'matches the platform name case-insensitively',
+    );
+  }
+  {
+    const { kept, dropped } = curate([linkedin({ _remote_only_pass: undefined })], cfg, new Set());
+    assert(
+      kept.length === 0 && dropped.length === 1 && dropped[0].reason === 'location',
+      'the on-site pass is unchanged: the same LinkedIn job is dropped for location',
+    );
+  }
+  {
+    const indeed = {
+      ...RECORDED.dfwPass[3], // Indeed, is_remote false, moved out of the city list
+      location: { raw: 'Tulsa, OK' },
+      _remote_only_pass: true,
+    };
+    const glassdoor = { ...RECORDED.dfwPass[5], _remote_only_pass: true }; // Glassdoor, is_remote false
+    const { kept, dropped } = curate([indeed, glassdoor], cfg, new Set());
+    assert(
+      kept.length === 0 && dropped.every((d) => d.reason === 'location') && dropped.length === 2,
+      'Indeed and Glassdoor on-site-flagged jobs from a remote-only pass are still dropped',
+    );
+  }
+  {
+    const indeedRemote = { ...RECORDED.dfwPass[4], _remote_only_pass: true };
+    const { kept } = curate([indeedRemote], cfg, new Set());
+    assert(
+      kept.length === 1 && !('work_arrangement_unknown' in kept[0]),
+      'an Indeed job the actor flagged remote is kept untagged',
+    );
+  }
+  {
+    const { dropped } = curate([linkedin({ title: 'Marketing Coordinator' })], cfg, new Set());
+    assert(
+      dropped.length === 1 && dropped[0].reason === 'title',
+      'the title filter still applies to a remote-pass LinkedIn job',
+    );
+  }
+  {
+    const { dropped } = curate(
+      [linkedin({ salary_minimum: 50000, salary_maximum: 60000 })],
+      { ...cfg, salary_floor: 200000 },
+      new Set(),
+    );
+    assert(
+      dropped.length === 1 && dropped[0].reason === 'salary',
+      'the salary floor still applies to a remote-pass LinkedIn job',
+    );
+  }
+  {
+    const seen = new Set(['https://example.com/linkedin/1003']);
+    const { dropped } = curate([linkedin()], cfg, seen);
+    assert(
+      dropped.length === 1 && dropped[0].reason === 'seen',
+      'an already-seen remote-pass LinkedIn job is still dropped as seen',
+    );
+  }
+  {
+    // The same posting returned by an on-site pass and the remote-only pass
+    // is one job after dedup; the remote-only marker must survive it, or the
+    // on-site copy's location drop would lose the role.
+    const onSiteCopy = { ...RECORDED.dfwPass[2] };
+    const remoteCopy = linkedin();
+    const { kept } = curate([onSiteCopy, remoteCopy], cfg, new Set());
+    assert(
+      kept.length === 1 && kept[0].work_arrangement_unknown === true,
+      'a posting seen in an on-site pass and the remote-only pass is kept and tagged',
+    );
+    assert(
+      !('_remote_only_pass' in onSiteCopy),
+      'dedup does not mutate the job objects it was given',
+    );
+  }
+}
+
 // ── Summary ─────────────────────────────────────────────────────────
 console.log(`\n${'═'.repeat(50)}`);
 console.log(`  Results: ${passed} passed, ${failed} failed, ${passed + failed} total`);

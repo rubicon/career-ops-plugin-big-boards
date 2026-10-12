@@ -114,6 +114,13 @@ board URL is preserved as `_remote_url`, so the pipeline row survives the
 board's own bot-block. Otherwise `url` falls back to the original board URL
 and `_remote_url` is omitted.
 
+LinkedIn sets neither `is_remote` nor `work_mode`, and the actor's remote-only
+filter leaks, so a LinkedIn job from a remote-only pass with no remote signal
+cannot be classified from the listing. Rather than let `location_filter` drop
+it, the plugin keeps it and adds `note: 'work arrangement unknown'`, which
+career-ops writes onto the `data/pipeline.md` row as
+`| note: work arrangement unknown`. Everything else is filtered as before.
+
 ## Cost
 
 Apify bills this actor pay-per-event: about $0.01 per actor start plus about

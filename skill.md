@@ -48,6 +48,14 @@ bot-block a later fetch. Otherwise `url` falls back to the original board
 URL and `_remote_url` is omitted. `Job` does not carry a `description`
 field; the cached file, when present, is the description.
 
+A LinkedIn job with no remote signal that comes back from a remote-only pass
+skips `location_filter` and is kept with `note: 'work arrangement unknown'`.
+LinkedIn sets neither `is_remote` nor `work_mode`, and the actor's
+remote-only filter leaks, so the listing cannot say whether the role is
+remote. The host writes the note onto the `data/pipeline.md` row as
+`| note: work arrangement unknown`, for review. Indeed, Glassdoor, jobs from
+an on-site pass, and jobs that say remote are filtered and tagged as before.
+
 ## Settings
 
 Set under `plugins.big-boards` in the user's `config/plugins.yml` (they

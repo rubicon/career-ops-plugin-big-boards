@@ -586,6 +586,121 @@ await withTmpCwd(async () => {
   check(jobs[0].title === 'VP Marketing', 'the matching job is the one that survives');
 });
 
+// ── LinkedIn jobs with no remote signal in the remote-only pass (issue #66) ──
+// LinkedIn sets neither is_remote nor work_mode. The recorded LinkedIn record
+// below (is_remote null, city-only location) is what a remote LinkedIn role
+// looks like to the plugin; its values are synthetic.
+const UNKNOWN_ARRANGEMENT_NOTE = 'work arrangement unknown';
+const LINKEDIN_CITY_ONLY = RECORDED.dfwPass[2];
+const dfwSettings = (passes) => ({
+  titles: ['VP Marketing'],
+  passes,
+  title_filter: { positive: ['VP Marketing'], negative: [] },
+  location_filter: { cities: ['Dallas', 'Plano', 'Frisco'], allow_remote: true },
+  salary_floor: 0,
+});
+
+section('toJob: work arrangement unknown');
+await withTmpCwd(() => {
+  const tagged = toJob({ ...LINKEDIN_CITY_ONLY, work_arrangement_unknown: true });
+  check(tagged.note === UNKNOWN_ARRANGEMENT_NOTE, 'a flagged job carries the note');
+  check(tagged.location === 'Greater Cleveland', 'the tagged job keeps its location text');
+  check(!('note' in toJob(LINKEDIN_CITY_ONLY)), 'an unflagged job carries no note');
+  check(!('note' in toJob(rawJob())), 'a remote job carries no note');
+});
+
+section('scanApify: remote-only pass keeps and tags LinkedIn jobs with no remote signal');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: dfwSettings([{ label: 'remote', remote_only: true }]),
+    fetchJson: async () => [LINKEDIN_CITY_ONLY],
+  };
+  const jobs = await scanApify(ctx);
+  check(jobs.length === 1, 'keeps the LinkedIn job the city filter would have dropped');
+  check(jobs[0]?.note === UNKNOWN_ARRANGEMENT_NOTE, 'tags it work arrangement unknown');
+  check(
+    jobs[0]?.location === 'Greater Cleveland',
+    'the location text is left as the board gave it',
+  );
+});
+
+section('scanApify: on-site pass is unchanged');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: dfwSettings([{ label: 'dfw', location: 'Dallas, TX', distance: 75 }]),
+    fetchJson: async () => [LINKEDIN_CITY_ONLY],
+  };
+  const jobs = await scanApify(ctx);
+  check(jobs.length === 0, 'the same LinkedIn job is still dropped for location');
+});
+
+section('scanApify: Indeed and Glassdoor handling is unchanged');
+await withTmpCwd(async () => {
+  const indeedOnSite = {
+    ...RECORDED.dfwPass[3],
+    location: { raw: 'Tulsa, OK' },
+    company_name: 'Tulsa Indeed Co',
+  };
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: dfwSettings([{ label: 'remote', remote_only: true }]),
+    fetchJson: async () => [indeedOnSite, RECORDED.dfwPass[5], RECORDED.dfwPass[4]],
+  };
+  const jobs = await scanApify(ctx);
+  check(
+    jobs.length === 1 && jobs[0].company === 'Initech Cloud',
+    'on-site-flagged Indeed and Glassdoor jobs leaking into the remote-only pass are dropped',
+  );
+  check(!('note' in jobs[0]), 'the remote-flagged Indeed job carries no note');
+});
+
+section('scanApify: jobs that already carry a remote signal are not tagged');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: dfwSettings([{ label: 'remote', remote_only: true }]),
+    fetchJson: async () => [
+      {
+        ...LINKEDIN_CITY_ONLY,
+        platform_url: 'https://example.com/linkedin/1004',
+        company_name: 'Remote Text Co',
+        location: { raw: 'Remote - United States' },
+      },
+      {
+        ...LINKEDIN_CITY_ONLY,
+        platform_url: 'https://example.com/linkedin/1005',
+        company_name: 'Flagged Co',
+        is_remote: true,
+      },
+    ],
+  };
+  const jobs = await scanApify(ctx);
+  check(jobs.length === 2, 'both remote-signalled LinkedIn jobs are kept');
+  check(
+    jobs.every((j) => !('note' in j)),
+    'neither carries a note',
+  );
+});
+
+section('scanApify: one LinkedIn posting returned by both passes');
+await withTmpCwd(async () => {
+  const ctx = {
+    env: { APIFY_TOKEN: 'tok' },
+    settings: dfwSettings([
+      { label: 'dfw', location: 'Dallas, TX', distance: 75 },
+      { label: 'remote', remote_only: true },
+    ]),
+    fetchJson: async () => [LINKEDIN_CITY_ONLY],
+  };
+  const jobs = await scanApify(ctx);
+  check(
+    jobs.length === 1 && jobs[0].note === UNKNOWN_ARRANGEMENT_NOTE,
+    'is returned once and tagged, instead of being lost to the on-site pass copy',
+  );
+});
+
 // ── Non-negotiable invariants (static source checks) ────────────────
 section('source invariants');
 {
