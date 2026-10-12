@@ -13,9 +13,12 @@
  * door-to-door drop, remote CMO keep, Austin on-site drop, dedup).
  */
 
+import { readFileSync } from 'node:fs';
+
 import {
   matchesTerm,
   titleAllowed,
+  jobLocation,
   isRemoteJob,
   locationAllowed,
   salaryAboveFloor,
@@ -168,6 +171,43 @@ assert(
   locationAllowed({ location: 'San Francisco, CA', is_remote: true }, LF) === true,
   'remote-flagged out-of-list kept',
 );
+
+// ── location as the actor returns it (build 1.0.52: an object) ───────
+// The shapes below are recorded in test/fixtures/all-jobs-scraper-1.0.52.json.
+section('jobLocation and object-shaped location');
+const RECORDED = JSON.parse(
+  readFileSync(new URL('./fixtures/all-jobs-scraper-1.0.52.json', import.meta.url), 'utf-8'),
+);
+const [dallas, plano, cleveland, frisco, austinRemote, boise, denverRemote] = RECORDED.dfwPass;
+assert(
+  jobLocation({ location: 'Dallas, TX' }) === 'Dallas, TX',
+  'a string location is returned as is',
+);
+assert(jobLocation(dallas) === 'Dallas, TX', 'an object location yields its raw text');
+assert(jobLocation(frisco) === 'Frisco, TX 75034', 'raw text is kept as returned, zip included');
+assert(
+  jobLocation(cleveland) === 'Greater Cleveland',
+  'an object with only locality and raw works',
+);
+assert(
+  jobLocation({ location: { locality: 'Dallas' } }) === '',
+  'an object without raw yields empty',
+);
+assert(jobLocation({ location: null }) === '', 'null location yields empty');
+assert(jobLocation({}) === '', 'missing location yields empty');
+assert(jobLocation(null) === '', 'null job yields empty');
+assert(
+  isRemoteJob({ is_remote: false, location: { raw: 'Remote', locality: 'Remote' } }) === true,
+  'object location whose raw text says Remote is remote',
+);
+assert(isRemoteJob(dallas) === false, 'recorded on-site object location is not remote');
+assert(isRemoteJob(austinRemote) === true, 'recorded is_remote true object location is remote');
+assert(locationAllowed(dallas, LF) === true, 'recorded Dallas object location kept');
+assert(locationAllowed(plano, LF) === true, 'recorded Plano object location kept');
+assert(locationAllowed(frisco, LF) === true, 'recorded Frisco object location kept');
+assert(locationAllowed(cleveland, LF) === false, 'recorded Cleveland on-site dropped');
+assert(locationAllowed(boise, LF) === false, 'recorded Boise on-site dropped');
+assert(locationAllowed(denverRemote, LF) === true, 'recorded remote out-of-list kept');
 
 // ── salaryAboveFloor (conservative: keep when no salary posted) ──────
 section('salaryAboveFloor');
@@ -367,6 +407,28 @@ section('markKeptSeen (resilient incremental writes)');
   assert(
     b2.kept.length === 0 && b2.dropped[0]?.reason === 'seen',
     'batch 2 drops the cross-title duplicate as seen',
+  );
+}
+
+section('curate over a recorded actor pass (object locations)');
+{
+  const { kept, dropped } = curate(
+    RECORDED.dfwPass,
+    {
+      title_filter: { positive: ['VP Marketing'], negative: [] },
+      location_filter: { cities: ['Dallas', 'Plano', 'Frisco'], allow_remote: true },
+      salary_floor: 0,
+    },
+    new Set(),
+  );
+  assert(
+    kept.map((j) => j.company_name).join(',') ===
+      'Acme Robotics,Widgetco,Globex Analytics,Initech Cloud,Hooli Devices',
+    'keeps the three city matches and the two remote-flagged jobs',
+  );
+  assert(
+    dropped.length === 2 && dropped.every((d) => d.reason === 'location'),
+    'drops the two out-of-list on-site jobs, both for location',
   );
 }
 

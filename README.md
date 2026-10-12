@@ -63,7 +63,8 @@ Settings live under `plugins.big-boards` in `config/plugins.yml`:
 | `title_filter`    | none                                                  | `{ positive: [...], negative: [...] }` term filters on the job title.    |
 | `location_filter` | none                                                  | `{ allow_remote, cities: [...] }` filters on-site locations.             |
 | `salary_floor`    | none                                                  | Drop a job only when it posts a salary whose top of range is below this. |
-| `max_results`     | `25`                                                  | Per-pass result cap from the actor.                                      |
+| `max_results`     | `25`                                                  | Result cap per platform per pass.                                        |
+| `timeout_ms`      | `180000`                                              | Milliseconds to wait for one actor run.                                  |
 | `platforms`       | `['LinkedIn', 'Indeed', 'ZipRecruiter', 'Glassdoor']` | Boards to scan.                                                          |
 | `country`         | `'United States'`                                     | Country passed to the actor.                                             |
 | `posted_since`    | `'14 days'`                                           | Recency window passed to the actor.                                      |
@@ -85,6 +86,13 @@ plugins:
         distance: 50
     max_results: 25
 ```
+
+`max_results` applies to each platform in each pass. One pass over four
+platforms can return up to four times that number. `timeout_ms` bounds one
+actor run, not the whole scan. A pass over all four boards has taken 221
+seconds, so the default can cut one off. A pass cut off that way is logged
+as an error and skipped. Apify's sync endpoint returns 408 after 300
+seconds, so `300000` is the highest useful value.
 
 ## Usage
 
@@ -119,13 +127,19 @@ $0.30 to $1.80. Run daily, that is about $9 to $53 per month. Actual cost
 scales directly with how many results the actor returns, so the levers that
 lower it are:
 
-- `max_results`: the per-pass result cap. Lowering it caps the worst case
-  directly.
+- `max_results`: the result cap per platform per pass. The worst case for a
+  run is `titles * passes * platforms * max_results` results. Lowering it caps
+  that directly.
 - Fewer `titles`: each title runs its own set of passes.
 - Fewer `passes` per title: each pass is a separate actor run, so each one
   adds its own $0.01 start cost on top of its results.
 - Lower run cadence (for example weekly instead of daily), if run on a
   schedule.
+
+On Apify's free plan the actor stops returning results once it reaches its
+free-plan limit. The run still succeeds and still bills the start fee, so each
+later pass costs $0.01 and returns nothing. The plugin logs a warning for every
+pass that returns 0 items.
 
 Apify's own subscription tiers lower the per-result rate further (down to
 about $0.00315 at their higher tiers), but the free-tier rate above is the

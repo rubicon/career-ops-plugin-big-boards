@@ -1,0 +1,97 @@
+{
+  "_about": "Shapes recorded from agentx/all-jobs-scraper build 1.0.52 on 2026-10-11 (run-sync-get-dataset-items, HTTP 201). Field names, types and nesting are as returned. Company, title, URL, address and description values are synthetic.",
+  "dfwPass": [
+    {
+      "platform": "LinkedIn",
+      "platform_url": "https://example.com/linkedin/1001",
+      "title": "VP Marketing",
+      "company_name": "Acme Robotics",
+      "location": { "raw": "Dallas, TX", "locality": "Dallas", "region": "TX" },
+      "is_remote": null,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Reporting to the CEO, this role owns brand, demand generation, and lifecycle marketing across the full funnel."
+    },
+    {
+      "platform": "LinkedIn",
+      "platform_url": "https://example.com/linkedin/1002",
+      "title": "VP Marketing",
+      "company_name": "Widgetco",
+      "location": { "raw": "Plano, TX", "locality": "Plano", "region": "TX" },
+      "is_remote": null,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Leads a team of twelve across brand, product marketing, and field events for a regional manufacturer."
+    },
+    {
+      "platform": "LinkedIn",
+      "platform_url": "https://example.com/linkedin/1003",
+      "title": "VP Marketing",
+      "company_name": "Northwind Supply",
+      "location": { "raw": "Greater Cleveland", "locality": "Greater Cleveland" },
+      "is_remote": null,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "On-site role at the company headquarters, with quarterly travel to regional distribution centers."
+    },
+    {
+      "platform": "Indeed",
+      "platform_url": "https://example.com/indeed/2001",
+      "title": "VP Marketing",
+      "company_name": "Globex Analytics",
+      "location": {
+        "raw": "Frisco, TX 75034",
+        "locality": "Frisco",
+        "region": "TX",
+        "postal_code": "75034",
+        "country": "United States",
+        "country_code": "US",
+        "street_address": "100 Example Street"
+      },
+      "is_remote": false,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Owns pipeline targets and the marketing operations stack for a mid-market software company."
+    },
+    {
+      "platform": "Indeed",
+      "platform_url": "https://example.com/indeed/2002",
+      "title": "VP Marketing",
+      "company_name": "Initech Cloud",
+      "location": {
+        "raw": "Austin, TX",
+        "locality": "Austin",
+        "region": "TX",
+        "country": "United States",
+        "country_code": "US"
+      },
+      "is_remote": true,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Fully remote leadership role for a distributed software company with customers across North America."
+    },
+    {
+      "platform": "Glassdoor",
+      "platform_url": "https://example.com/glassdoor/3001",
+      "title": "VP Marketing",
+      "company_name": "Umbrella Foods",
+      "location": { "raw": "Boise, ID", "locality": "Boise" },
+      "is_remote": false,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Builds the brand and channel marketing plan for a national food producer from its Boise office."
+    },
+    {
+      "platform": "Glassdoor",
+      "platform_url": "https://example.com/glassdoor/3002",
+      "title": "VP Marketing",
+      "company_name": "Hooli Devices",
+      "location": { "raw": "Denver, CO", "locality": "Denver", "region": "CO" },
+      "is_remote": true,
+      "salary_minimum": null,
+      "salary_maximum": null,
+      "description": "Remote-first role leading growth marketing, partnerships, and communications for a hardware company."
+    }
+  ],
+  "freePlanLimitPass": []
+}
