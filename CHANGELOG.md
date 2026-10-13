@@ -5,12 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.3](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.2...v0.1.3) (2026-10-12)
+## [0.1.3] - 2026-10-13
 
+LinkedIn sets no remote flag on its jobs, and the plugin read that silence as a no. A remote-only pass dropped those jobs at the city filter. They now stay in the results, tagged as unknown, so a person makes the call. The description check from the issue still waits on a bigger sample than five jobs.
 
-### Features
+### Changed
 
-* keep and tag LinkedIn jobs with no remote signal in remote-only passes ([#69](https://github.com/rubicon/career-ops-plugin-big-boards/issues/69)) ([8bf1266](https://github.com/rubicon/career-ops-plugin-big-boards/commit/8bf12665b36a15c6267f8090fdaac8590b71dbd3)), closes [#66](https://github.com/rubicon/career-ops-plugin-big-boards/issues/66)
+- A LinkedIn job from a remote-only pass with no remote signal is now kept. It carries the note `work arrangement unknown` on its `data/pipeline.md` row instead of falling to the city filter. Indeed and Glassdoor handling is unchanged ([#69](https://github.com/rubicon/career-ops-plugin-big-boards/pull/69), closes [#66](https://github.com/rubicon/career-ops-plugin-big-boards/issues/66)).
+
+Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
 ## [0.1.2](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.1...v0.1.2) (2026-10-11)
 
@@ -48,5 +51,6 @@ First published release.
 
 Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
-[Unreleased]: https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.3
 [0.1.0]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.0
