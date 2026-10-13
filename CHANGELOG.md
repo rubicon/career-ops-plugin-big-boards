@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3] - 2026-10-13
 
-LinkedIn sets no remote flag on its jobs, and the plugin read that silence as a no. A remote-only pass dropped those jobs at the city filter. They now stay in the results, tagged as unknown, so a person makes the call. The description check from the issue still waits on a bigger sample than five jobs.
+LinkedIn sets no remote flag on its jobs, and the plugin read that silence as a no. A remote-only pass dropped those jobs at the city filter. They now stay in the results, tagged as unknown, so a person makes the call. Using the job description as a remote signal waits for a sample larger than five jobs.
 
 ### Changed
 
