@@ -15,19 +15,30 @@ LinkedIn sets no remote flag on its jobs, and the plugin read that silence as a 
 
 Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
-## [0.1.2](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.1...v0.1.2) (2026-10-11)
+## [0.1.2] - 2026-10-12
 
+Apify's actor build 1.0.52 started returning `location` as an object. The plugin read it as a string, so the city filter dropped every on-site job and `[object Object]` reached the host. Only remote jobs survived. One recorded 25-job run kept 3 jobs before the fix and 12 after. A free-plan limit also made passes return nothing with no signal, and that now gets a warning.
 
-### Bug Fixes
+### Fixed
 
-* read the actor's location object and warn on empty passes ([#64](https://github.com/rubicon/career-ops-plugin-big-boards/issues/64)) ([9397233](https://github.com/rubicon/career-ops-plugin-big-boards/commit/9397233718d20321df77a0dc982744057ed69770))
+- Location is read from either a plain string or the actor's `location.raw`, at all four places the plugin used it. On-site jobs now pass the city filter, and the cached job-description files and the host get the real city text instead of `[object Object]` ([#64](https://github.com/rubicon/career-ops-plugin-big-boards/pull/64), closes [#63](https://github.com/rubicon/career-ops-plugin-big-boards/issues/63)).
+- A pass that returns 0 items now logs a warning. The warning names the Apify free-plan limit as one known cause, because the plugin cannot read the actor log to confirm it ([#64](https://github.com/rubicon/career-ops-plugin-big-boards/pull/64)).
 
-## [0.1.1](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.0...v0.1.1) (2026-08-15)
+### Changed
 
+- The README and `skill.md` now say `max_results` applies per platform per pass, and document `timeout_ms` ([#64](https://github.com/rubicon/career-ops-plugin-big-boards/pull/64)).
 
-### Bug Fixes
+Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
-* **release:** drop the release-as pin so versions can advance ([#50](https://github.com/rubicon/career-ops-plugin-big-boards/issues/50)) ([d246321](https://github.com/rubicon/career-ops-plugin-big-boards/commit/d246321db16f8adea3904ed3f57597d7c82bce33)), closes [#49](https://github.com/rubicon/career-ops-plugin-big-boards/issues/49)
+## [0.1.1] - 2026-08-15
+
+The release config forced version 0.1.0 on every run, not just the first. Nothing had failed yet, because nothing had merged since v0.1.0. The next merge would have proposed 0.1.0 again and died on a tag that already existed. The same fault turned up in a sibling plugin first, which is how this one got checked.
+
+### Release pipeline
+
+- Release-please no longer pins the version to 0.1.0, so later versions are computed from commits instead of colliding with the existing tag ([#50](https://github.com/rubicon/career-ops-plugin-big-boards/pull/50), closes [#49](https://github.com/rubicon/career-ops-plugin-big-boards/issues/49)).
+
+Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
 ## [0.1.0] - 2026-07-30
 
@@ -53,4 +64,6 @@ Contributors to this release: [Dax Davis](https://github.com/rubicon).
 
 [Unreleased]: https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.3...HEAD
 [0.1.3]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.3
+[0.1.2]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.2
+[0.1.1]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.1
 [0.1.0]: https://github.com/rubicon/career-ops-plugin-big-boards/releases/tag/v0.1.0
