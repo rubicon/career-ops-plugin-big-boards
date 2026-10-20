@@ -36,8 +36,9 @@ See `ARCHITECTURE.md` for the layout, data flow, and current build status.
 - `npm test` runs the zero-network smoke test (manifest hooks match the
   `index.mjs` exports).
 - `npm run format:check` / `npm run format` (Prettier).
-- In career-ops: `node plugins.mjs run big-boards provider` runs the plugin
-  once the provider hook lands.
+- In career-ops: `node scan.mjs --company "<portals.yml entry name>"` runs the
+  plugin's provider hook for its keyed `portals.yml` entry. `plugins.mjs run`
+  rejects a provider-only plugin.
 
 ## Working conventions
 

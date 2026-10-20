@@ -29,7 +29,7 @@ body:
       description: Use a small, non-personal sample configuration if the input matters.
       placeholder: |
         1. config/plugins.yml contains ...
-        2. Run node plugins.mjs run big-boards provider
+        2. Run node scan.mjs --company "<your portals.yml entry name>"
         3. See ...
     validations:
       required: true

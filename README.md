@@ -97,12 +97,14 @@ seconds, so `300000` is the highest useful value.
 ## Usage
 
 ```bash
-node plugins.mjs run big-boards provider
+node scan.mjs --company "Big boards"
 ```
 
-This runs the `provider` hook once for the matching `portals.yml` entry (see
-Setup above) and returns the scanned, curated `Job[]` for career-ops to write
-to the pipeline.
+`--company` matches the `name` of a `portals.yml` entry by case-insensitive
+substring, so this scans only the keyed entry from Setup above. The scan runs
+the `provider` hook once for that entry and writes the curated `Job[]` to the
+pipeline. `node plugins.mjs run big-boards` does not work: career-ops rejects
+it for a plugin whose only hook is `provider`.
 
 ## What it produces
 
