@@ -371,6 +371,31 @@ await withTmpCwd(async () => {
   check(jobs[0].url.startsWith('local:jds/'), 'job url points at the cached JD end to end');
 });
 
+section('scanApify: timeout_ms');
+for (const [configured, expected, label] of [
+  [undefined, 300000, 'an unset timeout_ms reaches fetchJson as 300000'],
+  [90000, 90000, 'a configured timeout_ms overrides the default'],
+]) {
+  await withTmpCwd(async () => {
+    const seen = [];
+    const ctx = {
+      env: { APIFY_TOKEN: 'tok' },
+      settings: {
+        titles: ['VP Marketing'],
+        passes: [{ label: 'remote', remote_only: true }],
+        ...(configured === undefined ? {} : { timeout_ms: configured }),
+        ...permissiveConfig(['VP Marketing']),
+      },
+      fetchJson: async (_url, opts) => {
+        seen.push(opts.timeoutMs);
+        return [];
+      },
+    };
+    await scanApify(ctx);
+    check(seen.length === 1 && seen[0] === expected, label);
+  });
+}
+
 section('scanApify: empty dataset');
 await withTmpCwd(async () => {
   const ctx = {
