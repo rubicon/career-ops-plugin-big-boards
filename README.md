@@ -64,7 +64,7 @@ Settings live under `plugins.big-boards` in `config/plugins.yml`:
 | `location_filter` | none                                                  | `{ allow_remote, cities: [...] }` filters on-site locations.             |
 | `salary_floor`    | none                                                  | Drop a job only when it posts a salary whose top of range is below this. |
 | `max_results`     | `25`                                                  | Result cap per platform per pass.                                        |
-| `timeout_ms`      | `180000`                                              | Milliseconds to wait for one actor run.                                  |
+| `timeout_ms`      | `300000`                                              | Milliseconds to wait for one actor run.                                  |
 | `platforms`       | `['LinkedIn', 'Indeed', 'ZipRecruiter', 'Glassdoor']` | Boards to scan.                                                          |
 | `country`         | `'United States'`                                     | Country passed to the actor.                                             |
 | `posted_since`    | `'14 days'`                                           | Recency window passed to the actor.                                      |
@@ -90,9 +90,9 @@ plugins:
 `max_results` applies to each platform in each pass. One pass over four
 platforms can return up to four times that number. `timeout_ms` bounds one
 actor run, not the whole scan. A pass over all four boards has taken 221
-seconds, so the default can cut one off. A pass cut off that way is logged
-as an error and skipped. Apify's sync endpoint returns 408 after 300
-seconds, so `300000` is the highest useful value.
+seconds, so the default is `300000`. A pass that exceeds the timeout is
+logged as an error and skipped. Apify's sync endpoint returns 408 after 300
+seconds, so `300000` is also the highest useful value.
 
 ## Usage
 
