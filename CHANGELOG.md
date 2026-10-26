@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4](https://github.com/rubicon/career-ops-plugin-big-boards/compare/v0.1.3...v0.1.4) (2026-10-26)
+
+
+### Bug Fixes
+
+* **scan:** raise the default actor timeout to 300000 ms ([#79](https://github.com/rubicon/career-ops-plugin-big-boards/issues/79)) ([d2dc8e8](https://github.com/rubicon/career-ops-plugin-big-boards/commit/d2dc8e85034b0e75e65548b4560f08389299d093)), closes [#67](https://github.com/rubicon/career-ops-plugin-big-boards/issues/67)
+
 ## [0.1.3] - 2026-10-13
 
 LinkedIn sets no remote flag on its jobs, and the plugin read that silence as a no. A remote-only pass dropped those jobs at the city filter. They now stay in the results, tagged as unknown, so a person makes the call. Using the job description as a remote signal waits for a sample larger than five jobs.
