@@ -1,10 +1,10 @@
 # Architecture
 
 career-ops-plugin-big-boards is a [career-ops](https://github.com/santifer/career-ops)
-plugin that scans the big consumer job boards (LinkedIn, Indeed, ZipRecruiter,
-Glassdoor, and other Apify-reachable sources) through the
-[Apify](https://apify.com) `agentx/all-jobs-scraper` actor and feeds curated
-roles, with full job-description text, into the career-ops pipeline. It uses
+plugin that scans the big consumer job boards (LinkedIn, Indeed and
+ZipRecruiter) through one [Apify](https://apify.com) actor per board and
+feeds curated roles, with job-description text where the board gives it, into
+the career-ops pipeline. It uses
 the `provider` hook, since it originates jobs rather than consuming them.
 
 ## Decisions
@@ -20,6 +20,7 @@ this way, what was rejected, and what each choice costs are in
 - [0005](docs/adr/0005-cache-job-descriptions-locally.md) Cache the job description locally and point the Job url at the cache
 - [0006](docs/adr/0006-secrets-and-egress-in-host-sandbox.md) Secrets and egress stay inside the host sandbox
 - [0007](docs/adr/0007-per-pass-failure-isolation.md) Per-pass failure isolation, within-run dedupe only
+- [0008](docs/adr/0008-route-each-board-to-its-own-actor.md) Route each board to its own Apify actor
 
 ## Layout
 
@@ -31,8 +32,10 @@ career-ops-plugin-big-boards/
   lib/
     scan-apify-core.mjs   # curation logic: title/location/salary filters, slugify,
                            # scan-history dedup
-    scan-apify.mjs         # engine: Apify actor call, multi-pass scan, JD caching
+    boards.mjs             # one actor per board: input builders and item mappers
+    scan-apify.mjs         # engine: per-board actor calls, multi-pass scan, JD caching
   test/
+    boards.test.mjs        # each board's input builder and item mapping
     smoke.mjs             # zero-network smoke test (manifest/hooks match)
   skill.md                 # agent-facing usage doc for this plugin
 ```
@@ -44,8 +47,10 @@ a read-only source for the port, not a dependency.
 
 ## Design boundary: curation and the network call are separate
 
-The engine (`lib/scan-apify.mjs`) calls the Apify actor and assembles raw
-results across one or more scan passes. The curation core
+The engine (`lib/scan-apify.mjs`) calls one Apify actor per board for each
+scan pass and assembles raw results. `lib/boards.mjs` is pure too: for each
+board it names the actor, builds its input from a pass, and maps its items
+into the raw job shape the curation core reads. The curation core
 (`lib/scan-apify-core.mjs`) is pure: it filters, dedupes against scan history,
 and slugifies job identifiers, without touching the network. The engine imports
 three symbols from the core (`curate`, `slugify`, `markKeptSeen`); nothing flows
@@ -76,7 +81,7 @@ Rationale: [0006](docs/adr/0006-secrets-and-egress-in-host-sandbox.md).
 ## Data flow
 
 ```
-ctx.settings (titles, passes) ──> engine ──> Apify actor run ──> raw job results
+ctx.settings (titles, passes) ──> engine ──> actor per board ──> raw job results
                                                                        │
                                                                        ▼
                                                      curation core (filter, dedupe, slugify)

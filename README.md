@@ -9,12 +9,12 @@ pipeline. A career-ops community plugin.
 
 ## What it does
 
-career-ops-plugin-big-boards pulls roles from LinkedIn, Indeed, ZipRecruiter,
-Glassdoor, and other Apify-reachable sources, using the
-`agentx/all-jobs-scraper` Apify actor. Unlike a stored board URL, which the big
-boards bot-block on a later fetch, the actor returns the full job description
-at scrape time, so the plugin captures the content up front and curates it
-into the pipeline without ever needing to re-fetch a dead link.
+career-ops-plugin-big-boards pulls roles from LinkedIn, Indeed and
+ZipRecruiter, running one Apify actor per board (see [Boards and cost](#boards-and-cost)).
+Unlike a stored board URL, which the big boards bot-block on a later fetch,
+the actors return the job description at scrape time where the board gives
+one, so the plugin captures the content up front and curates it into the
+pipeline without ever needing to re-fetch a dead link.
 
 It is a keyed provider: it never auto-detects, and only runs when the user
 adds an explicit `provider: big-boards` entry to `portals.yml`. See
@@ -56,18 +56,18 @@ adds an explicit `provider: big-boards` entry to `portals.yml`. See
 
 Settings live under `plugins.big-boards` in `config/plugins.yml`:
 
-| Setting           | Default                                               | Meaning                                                                  |
-| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| `titles`          | none (required)                                       | Search titles to scan. The plugin throws if this is unset or empty.      |
-| `passes`          | one remote-only pass                                  | Scan passes per title: `{ label, location, distance, remote_only }`.     |
-| `title_filter`    | none                                                  | `{ positive: [...], negative: [...] }` term filters on the job title.    |
-| `location_filter` | none                                                  | `{ allow_remote, cities: [...] }` filters on-site locations.             |
-| `salary_floor`    | none                                                  | Drop a job only when it posts a salary whose top of range is below this. |
-| `max_results`     | `25`                                                  | Result cap per platform per pass.                                        |
-| `timeout_ms`      | `300000`                                              | Milliseconds to wait for one actor run.                                  |
-| `platforms`       | `['LinkedIn', 'Indeed', 'ZipRecruiter', 'Glassdoor']` | Boards to scan.                                                          |
-| `country`         | `'United States'`                                     | Country passed to the actor.                                             |
-| `posted_since`    | `'14 days'`                                           | Recency window passed to the actor.                                      |
+| Setting           | Default                                  | Meaning                                                                    |
+| ----------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| `titles`          | none (required)                          | Search titles to scan. The plugin throws if this is unset or empty.        |
+| `passes`          | one remote-only pass                     | Scan passes per title: `{ label, location, distance, remote_only }`.       |
+| `title_filter`    | none                                     | `{ positive: [...], negative: [...] }` term filters on the job title.      |
+| `location_filter` | none                                     | `{ allow_remote, cities: [...] }` filters on-site locations.               |
+| `salary_floor`    | none                                     | Drop a job only when it posts a salary whose top of range is below this.   |
+| `max_results`     | `25`                                     | Result cap per board per pass.                                             |
+| `timeout_ms`      | `300000`                                 | Milliseconds to wait for one actor run.                                    |
+| `platforms`       | `['LinkedIn', 'Indeed', 'ZipRecruiter']` | Boards to scan. A board with no routed actor is logged and skipped.        |
+| `country`         | `'United States'`                        | Country for the LinkedIn and Indeed searches: a name or a two-letter code. |
+| `posted_since`    | `'14 days'`                              | Recency window, mapped to each actor's date filter.                        |
 
 Example:
 
@@ -87,12 +87,18 @@ plugins:
     max_results: 25
 ```
 
-`max_results` applies to each platform in each pass. One pass over four
-platforms can return up to four times that number. `timeout_ms` bounds one
-actor run, not the whole scan. A pass over all four boards has taken 221
-seconds, so the default is `300000`. A pass that exceeds the timeout is
-logged as an error and skipped. Apify's sync endpoint returns 408 after 300
-seconds, so `300000` is also the highest useful value.
+`max_results` applies to each board in each pass, so one pass over the three
+boards can return up to three times that number. Each board in a pass is its
+own actor run, and `timeout_ms` bounds one run, not the whole scan. The
+ZipRecruiter actor loads the board in a real browser and takes one to three
+minutes, so the default stays `300000`. A run that exceeds the timeout is
+logged as an error and skipped, and the other boards in the pass still run.
+Apify's sync endpoint returns 408 after 300 seconds, so `300000` is also the
+highest useful value.
+
+`country` takes a two-letter code or one of the country names listed in
+`lib/boards.mjs`. Any other name is logged once per scan and not sent, so the
+LinkedIn and Indeed actors use their own default country.
 
 ## Usage
 
@@ -114,47 +120,53 @@ local write succeeds, the plugin caches it to `jds/{slug}-{hash}.md`, `url`
 points at that cached copy as `local:jds/{slug}-{hash}.md`, and the original
 board URL is preserved as `_remote_url`, so the pipeline row survives the
 board's own bot-block. Otherwise `url` falls back to the original board URL
-and `_remote_url` is omitted.
+and `_remote_url` is omitted. The ZipRecruiter actor returned no description
+in testing, so ZipRecruiter jobs usually keep their board URL.
 
-LinkedIn sets neither `is_remote` nor `work_mode`, and the actor's remote-only
-filter leaks, so a LinkedIn job from a remote-only pass with no remote signal
-cannot be classified from the listing. Rather than let `location_filter` drop
-it, the plugin keeps it and adds `note: 'work arrangement unknown'`, which
-career-ops writes onto the `data/pipeline.md` row as
-`| note: work arrangement unknown`. Everything else is filtered as before.
+LinkedIn and ZipRecruiter rows carry no remote flag, and the LinkedIn
+actor's remote-only filter is a text match, so a job from either board that
+comes back from a remote-only pass with no remote signal cannot be classified
+from the listing. Rather than let `location_filter` drop it, the plugin keeps
+it and adds `note: 'work arrangement unknown'`, which career-ops writes onto
+the `data/pipeline.md` row as `| note: work arrangement unknown`. Everything
+else is filtered as before.
 
-## Cost
+## Boards and cost
 
-Apify bills this actor pay-per-event: about $0.01 per actor start plus about
-$0.0035 per result, per the actor's documented pricing on its Apify Store
-listing, <https://apify.com/agentx/all-jobs-scraper>, as of 2026-07-12
-(`agentx/all-jobs-scraper`, "All Jobs Scraper"). There is no monthly rental;
-every run costs money.
+Each board has its own Apify actor, and Apify bills each one pay-per-event:
+a small start fee per run (well under a cent) plus a fee per result. Prices
+are from each actor's Apify Store page as of 2026-10-27:
 
-For a 5-title by 2-pass by 4-board configuration, a realistic run costs about
-$0.30 to $1.80. Run daily, that is about $9 to $53 per month. Actual cost
-scales directly with how many results the actor returns, so the levers that
-lower it are:
+| Board        | Actor                                                                            | Price per result                                                  |
+| ------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| LinkedIn     | [`johnvc/linkedin-jobs-api`](https://apify.com/johnvc/linkedin-jobs-api)         | about $0.00002 ($0.00001 per job plus $0.00001 per stored row)    |
+| Indeed       | [`johnvc/indeed-jobs-api`](https://apify.com/johnvc/indeed-jobs-api)             | $0.004 per job on the free tier, down to $0.00343 on higher tiers |
+| ZipRecruiter | [`openclawai/job-board-scraper`](https://apify.com/openclawai/job-board-scraper) | $0.005 per job                                                    |
+| Glassdoor    | none                                                                             | not scanned: no tested actor returned Glassdoor results           |
 
-- `max_results`: the result cap per platform per pass. The worst case for a
-  run is `titles * passes * platforms * max_results` results. Lowering it caps
-  that directly.
-- Fewer `titles`: each title runs its own set of passes.
-- Fewer `passes` per title: each pass is a separate actor run, so each one
-  adds its own $0.01 start cost on top of its results.
+There is no monthly rental; every run costs money. For a 5-title by 2-pass
+configuration at `max_results: 25`, the worst case is 250 results per board:
+about $0.005 on LinkedIn, $1.00 on Indeed and $1.25 on ZipRecruiter, so about
+$2.26 per run with start fees. Each ZipRecruiter run bills four start events
+at $0.00005 each, so a run that fails or is blocked still costs about $0.0002.
+Real runs return fewer results than the cap. The levers that lower cost are:
+
+- `max_results`: the result cap per board per pass. The worst case for a run
+  is `titles * passes * boards * max_results` results.
+- `platforms`: leave out a board you don't need. Indeed and ZipRecruiter cost
+  far more per result than LinkedIn.
+- Fewer `titles` and fewer `passes`: each pass is one run per board.
 - Lower run cadence (for example weekly instead of daily), if run on a
   schedule.
 
-On Apify's free plan the actor stops returning results once it reaches its
-free-plan limit. The run still succeeds and still bills the start fee, so each
-later pass costs $0.01 and returns nothing. The plugin logs a warning for every
-pass that returns 0 items.
-
-Apify's own subscription tiers lower the per-result rate further (down to
-about $0.00315 at their higher tiers), but the free-tier rate above is the
-number to budget against before subscribing to anything. Verify current
-pricing at the actor's Apify Store page before relying on these numbers for
-budgeting, since Apify can change them.
+On Apify's free plan an actor can stop returning results once it reaches a
+free-plan limit. The run still succeeds, so the plugin logs a warning naming
+the title, pass and board for every run that returns 0 items. A row with no
+title or URL is not counted as an item: when ZipRecruiter blocks a run, the
+ZipRecruiter actor returns a status row instead of jobs, and the plugin drops
+it and logs its `__hint` and `per_site_status`. Verify current pricing on each
+actor's Apify Store page before budgeting, since Apify publishers can change
+it.
 
 ## Development
 

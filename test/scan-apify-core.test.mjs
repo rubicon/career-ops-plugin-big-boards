@@ -437,7 +437,8 @@ section('curate over a recorded actor pass (object locations)');
 // with is_remote null and a city in location. Shapes follow the recorded
 // LinkedIn records in the fixture above; values are synthetic. The engine
 // marks each job that came from a remote_only pass with _remote_only_pass.
-section('curate: remote-only pass, LinkedIn jobs with no remote signal');
+// ZipRecruiter rows carry no remote flag either (issue #83).
+section('curate: remote-only pass, LinkedIn and ZipRecruiter jobs with no remote signal');
 {
   const cfg = {
     title_filter: { positive: ['VP Marketing'], negative: [] },
@@ -531,6 +532,37 @@ section('curate: remote-only pass, LinkedIn jobs with no remote signal');
     assert(
       kept.length === 1 && !('work_arrangement_unknown' in kept[0]),
       'an Indeed job the actor flagged remote is kept untagged',
+    );
+  }
+  {
+    // A ZipRecruiter job as lib/boards.mjs maps it: no remote flag, no
+    // description, no salary, and a city outside the list.
+    const zipRecruiter = {
+      title: 'VP Marketing',
+      company_name: 'Initech Cloud',
+      location: 'Tulsa, OK',
+      platform_url: 'https://example.com/ziprecruiter/1',
+      platform: 'ZipRecruiter',
+      is_remote: null,
+      salary_minimum: null,
+      salary_maximum: null,
+      description: '',
+      _remote_only_pass: true,
+    };
+    const { kept } = curate([zipRecruiter], cfg, new Set());
+    assert(
+      kept.length === 1 && kept[0].work_arrangement_unknown === true,
+      'keeps and tags a remote-pass ZipRecruiter job with no remote flag',
+    );
+    const flagged = curate([{ ...zipRecruiter, is_remote: false }], cfg, new Set());
+    assert(
+      flagged.kept.length === 0 && flagged.dropped[0]?.reason === 'location',
+      'drops a remote-pass ZipRecruiter job the actor flagged as not remote',
+    );
+    const onSite = curate([{ ...zipRecruiter, _remote_only_pass: undefined }], cfg, new Set());
+    assert(
+      onSite.kept.length === 0 && onSite.dropped[0]?.reason === 'location',
+      'the on-site pass is unchanged: the same ZipRecruiter job is dropped for location',
     );
   }
   {
