@@ -18,6 +18,7 @@ Format is [MADR 4.0.0](https://adr.github.io/madr/), minimal template, plus
 | [0005](0005-cache-job-descriptions-locally.md)     | Cache the job description locally and point the Job url at the cache          | accepted |
 | [0006](0006-secrets-and-egress-in-host-sandbox.md) | Secrets and egress stay inside the host sandbox                               | accepted |
 | [0007](0007-per-pass-failure-isolation.md)         | Per-pass failure isolation, within-run dedupe only                            | accepted |
+| [0008](0008-route-each-board-to-its-own-actor.md)  | Route each board to its own Apify actor                                       | accepted |
 
 ## When to write one
 

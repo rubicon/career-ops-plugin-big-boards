@@ -117,10 +117,23 @@ await withTmpCwd(async () => {
       title_filter: { positive: ['VP Marketing'], negative: [] },
       location_filter: { allow_remote: true },
       salary_floor: 0,
+      platforms: ['LinkedIn'],
     },
     fetchJson: async (url, opts) => {
       calls.push({ url, opts });
-      if (calls.length === 1) return [rawJob()]; // local pass
+      if (calls.length === 1) {
+        // local pass: one job, as the LinkedIn actor returns it
+        const job = rawJob();
+        return [
+          {
+            title: job.title,
+            companyName: job.company_name,
+            location: job.location,
+            jobUrl: job.platform_url,
+            description: job.description,
+          },
+        ];
+      }
       return []; // remote pass
     },
   };
